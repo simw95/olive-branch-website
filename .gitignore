@@ -1,0 +1,16 @@
+# OS clutter
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Editor
+.vscode/
+*.code-workspace
+
+# Scratch files from local testing (the __ prefix is used for throwaway pages)
+__*.html
+
+# Nothing else is ignored on purpose:
+# the original photography in "Hamper Photos" and "Hero Image 2.png" are the
+# masters everything in assets/images is cut from. They belong in history.
