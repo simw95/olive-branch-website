@@ -51,6 +51,11 @@ body {
 img { max-width: 100%; display: block; }
 button, input, select, textarea { font: inherit; color: inherit; }
 
+/* The UA rule for [hidden] is display:none at low specificity, so any class
+   that sets display (.btn is inline-flex) beats it. Without this, hiding a
+   button with the hidden attribute silently does nothing. */
+[hidden] { display: none !important; }
+
 ::selection { background: var(--olive); color: var(--bone); }
 
 :focus-visible {

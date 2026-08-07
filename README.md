@@ -112,17 +112,72 @@ The stub is visible in the cart summary so nobody is misled.
 
 ---
 
-## Wiring up real payments later
+## Turning on card & UPI payments
 
-When you have a Razorpay account and somewhere to run server code:
+The code is already written. It switches itself on when the keys are present.
 
-1. Stand up an endpoint that creates a Razorpay Order from a cart payload.
-2. In `render.js`, replace the `[data-checkout]` click handler with the Razorpay
-   Checkout call, passing the `order_id` your endpoint returns.
-3. Verify the payment signature **on the server**. Never trust an amount sent
-   from the browser.
+### 1. Get your Razorpay keys
 
-Everything else — the cart, the quantity bands, the totals — already works.
+Sign up at razorpay.com, complete KYC (business PAN, bank account, address
+proof), then **Settings → API Keys → Generate**. You get two values:
+
+* **Key ID** — public, safe to share
+* **Key Secret** — private, **never** put this in the repo or send it to anyone
+
+### 2. Deploy to Netlify and add the keys
+
+Connect this repository to Netlify. `netlify.toml` already tells it what to do,
+and there is still no build step.
+
+Then in **Site settings → Environment variables**, add:
+
+| Name | Value |
+|---|---|
+| `RAZORPAY_KEY_ID` | your Key ID |
+| `RAZORPAY_KEY_SECRET` | your Key Secret |
+
+Redeploy. That is the whole setup — the cart notices the keys and swaps
+"Pay securely" in as the main button by itself. There is no flag to flip in
+the code, so nothing can fall out of sync.
+
+To switch payments off again, delete the two variables and redeploy. The cart
+returns to the WhatsApp route on its own.
+
+### How it works
+
+```
+Cart  ──POST ids + quantities──▶  /api/create-order
+                                  recomputes the price from data.js
+                                  creates the Razorpay order
+      ◀──── order_id ────────────
+Razorpay Checkout opens (card, UPI, netbanking, wallets)
+      ──POST signature──────────▶  /api/verify-payment
+                                  HMAC check against your secret
+      ◀──── confirmed ───────────
+```
+
+**The browser never sends a price.** It sends hamper ids and quantities; the
+function recomputes the amount from `data.js` — the same file the site renders
+from. Change a price there and both sides change together. If a customer edits
+the total in dev tools, nothing happens: that number is never used.
+
+The three functions live in `netlify/functions/` and have **no npm
+dependencies** — the Razorpay REST API over `fetch`, and Node's built-in
+`crypto` for the signature. Nothing to install, nothing to keep updated.
+
+### Still on the WhatsApp route
+
+Both paths stay live. Card and UPI suit single hampers at list price; bulk
+orders are quoted, so those still run through WhatsApp and a payment link. The
+WhatsApp button never disappears, it just becomes the secondary action.
+
+### Worth adding later
+
+Right now a payment is confirmed by the browser calling `/api/verify-payment`.
+If someone pays and closes the tab immediately, the payment succeeds at
+Razorpay but your site never records it. The fix is a **Razorpay webhook**
+pointing at a fourth function, so confirmation does not depend on the customer's
+browser staying open. Worth doing before volume gets serious.
 
 ---
 

@@ -6,7 +6,12 @@
    Loaded as a plain script (not a module) so the site works from file://.
    ========================================================================== */
 
-window.OLIVE = {};
+/* Declared with `var` rather than assigned onto `window`, so this same file
+   also loads under Node inside the payment functions. That matters: the
+   server recomputes every price from this catalogue instead of trusting the
+   browser, and sharing one file means the two can never disagree. */
+var OLIVE = {};
+if (typeof window !== 'undefined') { window.OLIVE = OLIVE; }
 
 /* --------------------------------------------------------------------------
    1. BUSINESS DETAILS  —  edit these first
@@ -402,3 +407,7 @@ OLIVE.whatsappLink = function (message) {
   var text = message || 'Hello, I would like to enquire about your hampers.';
   return 'https://wa.me/' + OLIVE.config.whatsapp + '?text=' + encodeURIComponent(text);
 };
+
+/* Node only — lets the payment functions require() this catalogue.
+   Ignored entirely by the browser. */
+if (typeof module !== 'undefined' && module.exports) { module.exports = OLIVE; }

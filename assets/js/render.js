@@ -242,17 +242,152 @@
     document.head.appendChild(s);
   }
 
+  /* -------------------------------------------------------------- payments */
+  /* Card and UPI checkout, live only on the deployed site with keys set.
+     Every path here degrades to WhatsApp: opened from file://, keys absent,
+     Razorpay's script blocked, or the network down. The cart never becomes a
+     dead end. */
+
+  function apiReachable() {
+    // A relative fetch is meaningless on file:// — don't even attempt it.
+    return /^https?:$/.test(location.protocol) && typeof fetch === 'function';
+  }
+
+  function loadCheckoutScript() {
+    return new Promise(function (resolve, reject) {
+      if (window.Razorpay) { return resolve(); }
+      var s = document.createElement('script');
+      s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      s.onload = function () { resolve(); };
+      s.onerror = function () { reject(new Error('The payment window could not load.')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function initPayment(mount) {
+    var payBtn  = mount.querySelector('[data-pay]');
+    var payNote = mount.querySelector('[data-pay-note]');
+    var waBtn   = mount.querySelector('[data-checkout]');
+    var waNote  = mount.querySelector('[data-wa-note]');
+    var stub    = mount.querySelector('[data-pay-stub]');
+    var errBox  = mount.querySelector('[data-pay-error]');
+    if (!payBtn || !apiReachable()) { return; }
+
+    function fail(msg) { errBox.textContent = msg; errBox.hidden = false; }
+    function idle() { payBtn.removeAttribute('aria-busy'); payBtn.textContent = 'Pay securely'; }
+
+    // Ask the host whether keys are configured, rather than keeping a flag
+    // in the repo that could fall out of sync.
+    fetch('/api/payment-status')
+      .then(function (r) { return r.ok ? r.json() : { enabled: false }; })
+      .then(function (d) {
+        if (!d || !d.enabled) { return; }
+        payBtn.hidden = false;
+        payNote.hidden = false;
+        stub.hidden = true;
+        // WhatsApp stays available, but steps back to the secondary action.
+        waBtn.classList.remove('btn-solid');
+        waBtn.style.marginTop = '0.85rem';
+        waNote.textContent = 'Prefer to confirm the details first? Send the order across and we will reply.';
+      })
+      .catch(function () { /* silently stays on the WhatsApp route */ });
+
+    payBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (payBtn.getAttribute('aria-busy') === 'true') { return; }
+      errBox.hidden = true;
+      payBtn.setAttribute('aria-busy', 'true');
+      payBtn.textContent = 'Opening…';
+
+      var note = mount.querySelector('#notecard');
+
+      // Only ids and quantities are sent. The amount is computed server-side.
+      fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ items: Cart.items(), note: note ? note.value : '' })
+      })
+        .then(function (r) {
+          return r.json().then(function (d) {
+            if (!r.ok) { throw new Error(d.error || 'Could not start the payment.'); }
+            return d;
+          });
+        })
+        .then(function (order) {
+          return loadCheckoutScript().then(function () { return order; });
+        })
+        .then(function (order) {
+          idle();
+          var rz = new window.Razorpay({
+            key:      order.keyId,
+            order_id: order.orderId,
+            amount:   order.amount,
+            currency: order.currency,
+            name:        OLIVE.config.brand,
+            description: 'Hamper order',
+            theme:  { color: '#5C2233' },
+            modal:  { ondismiss: idle },
+            handler: function (resp) { confirmPayment(mount, resp, fail); }
+          });
+          rz.on('payment.failed', function () {
+            fail('That payment did not go through, and nothing has been charged. Try again, or send the order on WhatsApp.');
+          });
+          rz.open();
+        })
+        .catch(function (err) {
+          idle();
+          fail((err && err.message) || 'Something went wrong. Please complete the order on WhatsApp instead.');
+        });
+    });
+  }
+
+  function confirmPayment(mount, resp, fail) {
+    fetch('/api/verify-payment', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(resp)
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && d.ok) { showPaid(mount, resp.razorpay_payment_id); }
+        else {
+          fail('We could not confirm that payment. Please do not pay again — message us on WhatsApp and we will check it.');
+        }
+      })
+      .catch(function () {
+        fail('Your payment went through, but we could not confirm it here. Please message us on WhatsApp before trying again.');
+      });
+  }
+
+  function showPaid(mount, paymentId) {
+    // Marks the cart finished so the cart:change listener does not repaint
+    // over this confirmation when the basket is emptied.
+    mount.setAttribute('data-done', '1');
+    Cart.clear();
+    mount.innerHTML =
+      '<div class="empty">' +
+        '<span class="label">Order received</span>' +
+        '<h2 class="d-m">Thank you — that is confirmed.</h2>' +
+        '<p class="muted" style="margin-top:0.75rem">A receipt is on its way to you, and we will be in touch about dispatch.</p>' +
+        '<p class="small" style="margin-top:1.25rem">Payment reference <strong>' + esc(paymentId) + '</strong></p>' +
+        '<p style="margin-top:2rem"><a class="btn" href="collections.html">Explore the collections</a></p>' +
+      '</div>';
+  }
+
   /* ------------------------------------------------------------- the cart */
   function renderCart() {
     var mount = document.getElementById('cart');
     if (!mount) { return; }
 
     function paint() {
+      // Once an order is paid, the confirmation stands — don't repaint it.
+      if (mount.getAttribute('data-done')) { return; }
+
       var lines = Cart.lines();
 
       if (!lines.length) {
         mount.innerHTML = '<div class="empty">' +
-          '<h1 class="d-m">Your cart is empty.</h1>' +
+          '<h2 class="d-m">Your cart is empty.</h2>' +
           '<p class="muted" style="margin-top:0.75rem">Nothing chosen yet.</p>' +
           '<p style="margin-top:2rem"><a class="btn" href="collections.html">Browse the collections</a></p>' +
           '</div>';
@@ -301,12 +436,17 @@
               '<textarea id="notecard" name="notecard" placeholder="Written by hand and tucked inside each hamper."></textarea>' +
             '</label>' +
 
-            '<a class="btn btn-solid btn-block" data-checkout href="#">Complete order on WhatsApp</a>' +
-            '<p class="small" style="margin-top:0.75rem">We confirm availability and dispatch dates, then send a secure payment link.</p>' +
+            '<a class="btn btn-solid btn-block" data-pay href="#" hidden>Pay securely</a>' +
+            '<p class="small" data-pay-note hidden style="margin-top:0.75rem">Card, UPI, netbanking and wallets. You will receive a GST invoice by email.</p>' +
 
-            '<div class="stub" style="margin-top:1.5rem">' +
-              '<strong>Card &amp; UPI checkout — not yet connected.</strong><br>' +
-              'This build has no backend. A developer can wire Razorpay here; until then every order completes over WhatsApp.' +
+            '<a class="btn btn-solid btn-block" data-checkout href="#" style="margin-top:0">Complete order on WhatsApp</a>' +
+            '<p class="small" data-wa-note style="margin-top:0.75rem">We confirm availability and dispatch dates, then send a secure payment link.</p>' +
+
+            '<p class="notes" data-pay-error hidden style="margin-top:1rem"></p>' +
+
+            '<div class="stub" data-pay-stub style="margin-top:1.5rem">' +
+              '<strong>Card &amp; UPI checkout — not connected here.</strong><br>' +
+              'Online payment runs on the deployed site. Opened locally from a file, every order completes over WhatsApp.' +
             '</div>' +
 
             '<p style="margin-top:1.25rem"><a class="tlink" href="bulk.html">Ordering more than ' +
@@ -322,6 +462,8 @@
         if (note && note.value) { text += '\n\nNote card: ' + note.value; }
         window.open(OLIVE.whatsappLink(text), '_blank', 'noopener');
       });
+
+      initPayment(mount);
 
       mount.querySelectorAll('[data-inc]').forEach(function (b) {
         b.addEventListener('click', function () {

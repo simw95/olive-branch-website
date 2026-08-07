@@ -22,6 +22,11 @@ All data therefore loads through a plain `<script>` tag that assigns to a
 global (`window.OLIVE`). If you find yourself wanting a module system, you are
 about to break the core property of this project. Discuss it first.
 
+**One deliberate exception.** The cart uses `fetch` for the payment endpoints.
+That is allowed because it is *optional* — it is skipped entirely unless
+`location.protocol` is http(s), and every failure falls back to the WhatsApp
+route. Nothing the site needs in order to render ever goes over `fetch`.
+
 There is no test suite. Verification is visual — see the bottom of this file.
 
 ---
@@ -66,6 +71,8 @@ trade-off is weaker per-hamper SEO, mitigated with JSON-LD.
 | `font-variant-numeric: tabular-nums` on prices | Schibsted Grotesk's tabular comma is full-width, so ₹1,28,700 renders as "₹1 , 28 , 700" | `lining-nums` for any INR figure |
 | Editing files with PowerShell `Get-Content`/`Set-Content` | Reads UTF-8 as ANSI and re-encodes, mojibaking every `—`, `’`, `→`, `▸` in the file | Use the Edit tool, or `[System.IO.File]::ReadAllText(path, [Text.Encoding]::UTF8)` |
 | Two `.section` blocks in a row | Stacked padding leaves a ~170px gap | Put `style="padding-bottom:0"` on the first, or alternate `section-alt` |
+| `hidden` attribute on a `.btn` | The UA's `[hidden]{display:none}` loses to `.btn{display:inline-flex}`, so the element stays visible | `[hidden]{display:none!important}` is already in section 1 — keep it |
+| Trusting any price sent from the browser | The cart total is client-side and trivially editable in dev tools | `create-order.js` recomputes every amount from `data.js`. Never accept an amount over the wire |
 
 ---
 
@@ -88,10 +95,11 @@ UI). The wordmark is set in capitals with wide tracking to match the box lids.
 
 ## Deliberate decisions that look like omissions
 
-- **Payments are not connected.** There is no backend, so a card/UPI checkout
-  cannot be done securely — the amount would be tamperable in the browser.
-  Checkout composes the order and hands it to WhatsApp. The stub is visible in
-  the cart on purpose. See README for the Razorpay upgrade path.
+- **Payments are wired but dormant until keys exist.** Three functions in
+  `netlify/functions/` handle Razorpay. The cart asks `/api/payment-status`
+  and shows the Pay button only if the host has `RAZORPAY_KEY_ID` and
+  `RAZORPAY_KEY_SECRET` set. There is deliberately **no on/off flag in the
+  repo** — a flag could disagree with reality; asking the server cannot.
 - **The Bridesmaid collection is parked, not deleted.** Its photography is
   processed in `assets/images/bridesmaid/` and `data.js` holds a commented-out
   collection block and two hampers. Uncomment both plus a
