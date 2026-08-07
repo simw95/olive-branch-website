@@ -13,7 +13,8 @@
   --ink-soft:   #55554C;
   --olive:      #4A5D3A;
   --olive-deep: #2A3423;
-  --burgundy:   #5C2233;
+  --burgundy:      #5C2233;
+  --burgundy-deep: #431926;   /* pressed/hover state for solid burgundy */
   --rule:       rgba(26, 26, 23, 0.15);
   --rule-soft:  rgba(26, 26, 23, 0.08);
 
@@ -155,11 +156,13 @@ a { color: inherit; }
   transition: background 0.4s var(--ease), color 0.4s var(--ease),
               border-color 0.4s var(--ease), opacity 0.4s var(--ease);
 }
-.btn:hover { background: var(--ink); color: var(--bone); }
+/* Fills burgundy, not near-black — on the bone ground a black box reads as a
+   different design language to the rest of the site. */
+.btn:hover { background: var(--burgundy); border-color: var(--burgundy); color: var(--bone); }
 
 /* Commerce actions only — the one place solid fill is allowed */
 .btn-solid { background: var(--burgundy); border-color: var(--burgundy); color: var(--bone); }
-.btn-solid:hover { background: var(--ink); border-color: var(--ink); color: var(--bone); }
+.btn-solid:hover { background: var(--burgundy-deep); border-color: var(--burgundy-deep); color: var(--bone); }
 
 .btn-light { border-color: var(--bone); color: var(--bone); }
 .btn-light:hover { background: var(--bone); color: var(--ink); }
@@ -210,12 +213,13 @@ a { color: inherit; }
   overflow: hidden;
 }
 
+/* Deliberately not sticky. The header scrolls away and gives the viewport
+   back to the photography — the declaration used to say `sticky` but never
+   behaved that way, because a sticky element can only stick inside its own
+   parent and #site-header is only as tall as the header itself. */
 .masthead {
   background: var(--bone);
   border-bottom: 1px solid var(--rule-soft);
-  position: sticky;
-  top: 0;
-  z-index: 60;
 }
 
 .masthead-row {
@@ -407,16 +411,19 @@ a { color: inherit; }
 .hero-media {
   position: relative;
   overflow: hidden;
-  background: var(--olive-deep);
+  background: var(--bone-2);
   aspect-ratio: 1858 / 846;
 }
-/* Minimal overscan: enough headroom for the parallax drift, small enough that
-   the photograph shows essentially as shot. */
+/* No parallax here, so no overscan. The drift travelled ±7% while only 3% of
+   headroom was hiding it, which exposed a strip of the backing colour at the
+   foot of the hero. Filling the frame exactly means there is nothing to
+   expose — and it shows the photograph completely uncropped, which is what
+   this image is for. */
 .hero-media img {
   position: absolute;
-  inset: -3% 0;
+  inset: 0;
   width: 100%;
-  height: 106%;
+  height: 100%;
   object-fit: cover;
   object-position: 50% 50%;
 }
@@ -507,7 +514,8 @@ a { color: inherit; }
   padding: 0.5rem 0.85rem;
   pointer-events: none;
 }
-.product-buy { position: sticky; top: calc(var(--h-mast) + 1.5rem); }
+/* Offset is just breathing room now; nothing is pinned above it. */
+.product-buy { position: sticky; top: 1.5rem; }
 .product-detail { margin-top: clamp(2.5rem, 5vw, 3.75rem); max-width: min(60ch, 100%); }
 
 .qty {
@@ -827,12 +835,6 @@ a { color: inherit; }
   /* A little taller than the source so the wordmark keeps some breathing
      room, but shallow enough that cover never crops into it. */
   .hero-media { aspect-ratio: 16 / 10; }
-  .hero-media img {
-    inset: 0;
-    height: 100%;
-    object-position: 50% 50%;
-    transform: none;
-  }
   .bleed-16 { aspect-ratio: 3 / 2; }
 }
 

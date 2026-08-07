@@ -67,7 +67,8 @@ trade-off is weaker per-hamper SEO, mitigated with JSON-LD.
 |---|---|---|
 | `max-width: 30ch` on a large heading | `ch` scales with the element's own font-size, so a 34px heading wants ~560px and overflows a phone | `max-width: min(30ch, 100%)`, or use `rem` |
 | `min-height` together with `aspect-ratio` | The min-height transfers through the ratio into a **minimum width** (320 × 16/7 = 731px) and forces horizontal overflow | Step the `aspect-ratio` responsively; no `min-height` |
-| `body { overflow-x: hidden }` | Makes `<body>` a scroll container and silently breaks `position: sticky` on descendants (masthead, product buy panel) | `overflow-x: clip` |
+| `body { overflow-x: hidden }` | Makes `<body>` a scroll container and silently breaks `position: sticky` on descendants (the product buy panel) | `overflow-x: clip` |
+| `position: sticky` on an element whose parent is only as tall as itself | Sticky is bounded by the parent, so it scrolls away and looks broken. The masthead did this for months | Stick to a parent that spans the scroll region, or don't declare it |
 | `font-variant-numeric: tabular-nums` on prices | Schibsted Grotesk's tabular comma is full-width, so ₹1,28,700 renders as "₹1 , 28 , 700" | `lining-nums` for any INR figure |
 | Editing files with PowerShell `Get-Content`/`Set-Content` | Reads UTF-8 as ANSI and re-encodes, mojibaking every `—`, `’`, `→`, `▸` in the file | Use the Edit tool, or `[System.IO.File]::ReadAllText(path, [Text.Encoding]::UTF8)` |
 | Two `.section` blocks in a row | Stacked padding leaves a ~170px gap | Put `style="padding-bottom:0"` on the first, or alternate `section-alt` |
