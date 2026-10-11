@@ -443,6 +443,42 @@ a { color: inherit; }
 /* The CTA row needs room for two buttons side by side, not the text measure. */
 .hero-cta { max-width: none; }
 
+/* ---- Hero entrance ------------------------------------------------------ */
+/* The frame holds still and the photograph descends into it, so the sprig and
+   the wordmark inside the picture glide down from the top. The copy follows
+   in the same direction, a beat behind.
+   Overscan is what makes the drop safe here: at scale 1.10 there is 5% of
+   headroom hidden above and below, and the travel is 4%, so no strip of
+   backing colour is ever exposed — the exact trap that took parallax off this
+   image. Scale and travel reach zero together, so they stay in step. */
+@keyframes hero-drop {
+  from { transform: translate3d(0, -4%, 0) scale(1.10); }
+  to   { transform: none; }
+}
+/* Once settled, a very slow breath so the hero is never quite still. Pure
+   scale, never below 1, so it cannot expose an edge. It begins at identity —
+   exactly where the drop ends — so the two meet without a jump. */
+@keyframes hero-breathe {
+  from { transform: none; }
+  to   { transform: scale(1.045); }
+}
+.hero-media img {
+  animation: hero-drop 1.9s var(--ease) both,
+             hero-breathe 26s ease-in-out 2.1s infinite alternate;
+}
+
+/* Eyebrow, headline, rule, lede, buttons — in sequence, all downward. */
+@keyframes hero-glide {
+  from { opacity: 0; transform: translate3d(0, -24px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+.hero-body > * { animation: hero-glide 1.1s var(--ease) both; }
+.hero-body > *:nth-child(1) { animation-delay: 0.15s; }
+.hero-body > *:nth-child(2) { animation-delay: 0.30s; }
+.hero-body > *:nth-child(3) { animation-delay: 0.44s; }
+.hero-body > *:nth-child(4) { animation-delay: 0.56s; }
+.hero-body > *:nth-child(5) { animation-delay: 0.68s; }
+
 /* ------------------------------------------------- 7. FULL-BLEED PICTURES */
 .bleed {
   position: relative;
@@ -451,6 +487,10 @@ a { color: inherit; }
 }
 .bleed-media { position: absolute; inset: -12% 0; }
 .bleed-media img { width: 100%; height: 100%; object-fit: cover; }
+/* A <picture> is an inline box; without this it sits between .bleed-media and
+   the image and the sizing above never reaches the <img>. `contents` removes
+   the wrapper from layout and leaves the image as the direct child. */
+.bleed-media picture { display: contents; }
 /* No min-height here: combined with aspect-ratio it transfers into a
    *minimum width* (320 × 16/7 = 731px) and overflows narrow viewports.
    The ratio is stepped responsively instead. */
@@ -505,7 +545,8 @@ a { color: inherit; }
   gap: clamp(2rem, 5vw, 4.5rem);
   align-items: start;
 }
-.product-media { position: relative; background: var(--bone-3); }
+/* overflow clips the hover magnification — see section 15. */
+.product-media { position: relative; background: var(--bone-3); overflow: hidden; }
 .product-media img { width: 100%; height: auto; }
 .zoom-hint {
   position: absolute; left: 1rem; bottom: 1rem;
@@ -541,6 +582,42 @@ a { color: inherit; }
 .qty input::-webkit-outer-spin-button,
 .qty input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
+/* A named block inside a collection page — Diwali inside Celebration. The
+   rule above it is what separates one block from the next; without it the
+   second grid reads as more of the first. */
+.collection-section {
+  margin-top: clamp(3rem, 6vw, 5rem);
+  padding-top: clamp(2.5rem, 5vw, 4rem);
+  border-top: 1px solid var(--rule);
+}
+.collection-section-head { margin-bottom: clamp(2rem, 4vw, 3rem); }
+
+/* The other views of a hamper, under its photograph. Square thumbnails so the
+   row does not jump about when a landscape and a portrait sit side by side. */
+.product-views {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+.product-view {
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: 1px solid var(--rule);
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.product-view img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.product-view:hover { border-color: var(--olive); }
+/* The view being shown. A 2px inset rather than an outline, so the thumbnail
+   does not shift by a pixel when it becomes current. */
+.product-view[aria-current="true"] {
+  border-color: var(--olive-deep);
+  box-shadow: inset 0 0 0 2px var(--olive-deep);
+}
+
 .tiers { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .tiers th, .tiers td {
   text-align: left; padding: 0.65rem 0.25rem;
@@ -561,6 +638,13 @@ a { color: inherit; }
   font-variant-numeric: tabular-nums;
 }
 .price-each { font-size: 0.8rem; color: var(--ink-soft); margin-left: 0.5rem; }
+
+/* States that the price above is the whole price. No figure, by design. */
+.price-tax {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
 
 /* Contents manifest — the leaf glyph earns its place here */
 .manifest { list-style: none; padding: 0; margin: 0; }
@@ -631,14 +715,22 @@ a { color: inherit; }
 .field textarea { min-height: 130px; resize: vertical; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.25rem; }
 
-.form-note { font-size: 0.8rem; color: var(--ink-soft); }
-
-.guestcount {
-  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem;
-  background: var(--bone-2);
-  padding: clamp(1.5rem, 3vw, 2.25rem);
+/* Delivery address, inside the cart summary. The summary column is narrow
+   (0.9fr of the cart grid), so the fields are tightened and the paired rows
+   stack rather than squeezing two inputs into ~200px each. */
+.ship {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
 }
-.guestcount .field { margin-bottom: 0; flex: 1 1 210px; }
+.ship .field { margin-bottom: 0.85rem; }
+.ship .field textarea { min-height: 4.5rem; }
+.ship .field-row { grid-template-columns: 1fr; gap: 0; }
+@media (min-width: 1180px) {
+  .ship .field-row { grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+}
+
+.form-note { font-size: 0.8rem; color: var(--ink-soft); }
 
 /* --------------------------------------------------------------- 12. CART */
 .cart-layout {
@@ -671,6 +763,13 @@ a { color: inherit; }
   border-top: 1px solid var(--rule);
   margin-top: 0.5rem; padding-top: 1rem;
   font-family: var(--serif); font-size: 1.4rem;
+}
+/* Sits under the total, quietly — a statement about the figure above, not a
+   charge, so it carries no amount and no weight. */
+.tax-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
 }
 
 .linkish {
@@ -760,6 +859,21 @@ a { color: inherit; }
 .zoom img {
   max-width: none;
   transition: transform 0.12s linear;
+  will-change: transform;
+  /* Without this the browser claims the drag for page scrolling and the
+     photograph will not pan under a finger. */
+  touch-action: none;
+}
+
+/* Magnify in place. `.product-media` clips (section 9), the photograph grows
+   inside it, and the transform-origin set in site.js decides which part you
+   are looking at. Scale never drops below 1, so the frame stays covered and
+   clipping is the only containment needed — there is no edge case to guard.
+   The transition eases the growing and the settling; the origin changes are
+   not transitioned, so tracking stays locked to the cursor. */
+.product-media img {
+  cursor: zoom-in;
+  transition: transform 0.35s var(--ease);
   will-change: transform;
 }
 .zoom-close {
@@ -869,4 +983,8 @@ a { color: inherit; }
   .wipe { clip-path: inset(0 0 0 0); }
   .par img, .par-el { transform: none; }
   .bleed-zoom .bleed-media { transform: none; }
+  /* Kills the delays too — zeroing duration alone would still hold the hero
+     copy invisible through its stagger. */
+  .hero-media img,
+  .hero-body > * { animation: none !important; opacity: 1; transform: none; }
 }

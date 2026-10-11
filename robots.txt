@@ -1,0 +1,10 @@
+# The Olive Branch
+User-agent: *
+Allow: /
+
+# Nothing to index: the cart is per-visitor, the rest are not pages.
+Disallow: /cart.html
+Disallow: /api/
+Disallow: /.netlify/
+
+Sitemap: https://theolivebranch.in/sitemap.xml

@@ -9,8 +9,8 @@ browser and the whole thing works, cart included.
 
 `assets/js/data.js`
 
-That file holds business details, the hamper catalogue, prices, price bands and
-journal posts. Nothing else needs editing for day-to-day changes.
+That file holds business details, the hamper catalogue and prices. Nothing
+else needs editing for day-to-day changes.
 
 ### Change a price
 
@@ -22,8 +22,14 @@ prices: [6900, 6490, 6140, 5860, 5520]
 //        1-9   10-24  25-49  50-99  100+
 ```
 
-The product page, the cart, the tier table and the guest-count calculator all
-read from this. Change the numbers and everything follows.
+The product page and the cart both read from this. Change the numbers and
+everything follows.
+
+**Set those figures tax-inclusive.** Whatever you type is exactly what the
+customer pays — the site does no tax arithmetic anywhere. It only states the
+fact, once under the price on a product page and once under the cart total,
+using `OLIVE.config.taxNote` (`'Inclusive of all taxes.'`). Change that one
+string to change both places.
 
 ### Add a hamper
 
@@ -74,7 +80,6 @@ bulk.html                      Bulk & corporate — the main conversion page
 enquiry.html                   Contact and consultation requests
 cart.html                      Cart and checkout
 about.html                     Brand story
-journal.html + journal-*.html  Three gifting guides
 policies.html                  Delivery, returns, privacy, terms
 
 assets/css/olive.css           The entire design system
@@ -131,14 +136,31 @@ and there is still no build step.
 
 Then in **Site settings → Environment variables**, add:
 
-| Name | Value |
-|---|---|
-| `RAZORPAY_KEY_ID` | your Key ID |
-| `RAZORPAY_KEY_SECRET` | your Key Secret |
+| Name | Value | Needed for |
+|---|---|---|
+| `RAZORPAY_KEY_ID` | your Key ID | card & UPI checkout |
+| `RAZORPAY_KEY_SECRET` | your Key Secret | card & UPI checkout |
+| `RAZORPAY_WEBHOOK_SECRET` | any long random string | the order webhook |
+| `RESEND_API_KEY` | from resend.com | the order email |
+| `ORDER_EMAIL_FROM` | `The Olive Branch <orders@theolivebranch.in>` | the order email |
 
 Redeploy. That is the whole setup — the cart notices the keys and swaps
 "Pay securely" in as the main button by itself. There is no flag to flip in
 the code, so nothing can fall out of sync.
+
+Each group is independent. Set only the first two and payments work but no
+confirmation email arrives; set none and every order completes over WhatsApp.
+
+**The webhook needs one step in Razorpay too:** Settings → Webhooks → Add New
+Webhook, URL `https://<your-site>/api/razorpay-webhook`, secret the same
+string you put in `RAZORPAY_WEBHOOK_SECRET`, and tick the **`payment.captured`**
+event. Without it, a customer who closes the tab straight after paying leaves
+you with a payment in the Razorpay dashboard and no order email.
+
+**Resend needs its sending domain verified** before it will deliver to
+`hello@theolivebranch.in`. Until that is done, set `ORDER_EMAIL_FROM` to
+`onboarding@resend.dev`, which only delivers to the address you signed up with
+— enough to prove the flow works.
 
 To switch payments off again, delete the two variables and redeploy. The cart
 returns to the WhatsApp route on its own.
@@ -161,9 +183,9 @@ function recomputes the amount from `data.js` — the same file the site renders
 from. Change a price there and both sides change together. If a customer edits
 the total in dev tools, nothing happens: that number is never used.
 
-The three functions live in `netlify/functions/` and have **no npm
+The five functions live in `netlify/functions/` and have **no npm
 dependencies** — the Razorpay REST API over `fetch`, and Node's built-in
-`crypto` for the signature. Nothing to install, nothing to keep updated.
+`crypto` for the signatures. Nothing to install, nothing to keep updated.
 
 ### Still on the WhatsApp route
 
@@ -171,13 +193,31 @@ Both paths stay live. Card and UPI suit single hampers at list price; bulk
 orders are quoted, so those still run through WhatsApp and a payment link. The
 WhatsApp button never disappears, it just becomes the secondary action.
 
-### Worth adding later
+### Testing it on your own machine
 
-Right now a payment is confirmed by the browser calling `/api/verify-payment`.
-If someone pays and closes the tab immediately, the payment succeeds at
-Razorpay but your site never records it. The fix is a **Razorpay webhook**
-pointing at a fourth function, so confirmation does not depend on the customer's
-browser staying open. Worth doing before volume gets serious.
+The payment functions need a server, so `file://` cannot run them — the cart
+there simply stays on the WhatsApp route. To exercise the real thing:
+
+```
+npm i -g netlify-cli      # a developer tool, installed globally.
+cp .env.example .env      # The site itself still has no package.json.
+netlify dev               # → http://localhost:8888
+```
+
+Fill `.env` with your **test** keys (`rzp_test_…`). It is git-ignored and the
+deployed site never reads it — Netlify uses its own environment variables.
+
+Razorpay's test credentials, which move no money:
+
+| | |
+|---|---|
+| Card | `4111 1111 1111 1111`, any future expiry, any CVV |
+| UPI | `success@razorpay`, or `failure@razorpay` to test the failure path |
+
+Orders appear in the Razorpay dashboard with **Test Mode** switched on.
+
+The webhook is the one piece this cannot test, because Razorpay has to be able
+to reach the URL. Use `netlify dev --live`, or test it on a deploy preview.
 
 ---
 
@@ -189,8 +229,18 @@ previews only behave correctly over `http://`.
 
 ## Publishing
 
-Drag the whole folder onto [Netlify Drop](https://app.netlify.com/drop) or
-Cloudflare Pages. There is no build command and no configuration.
+Connect the repository to Netlify; `netlify.toml` configures everything.
+
+It runs `tools/publish.sh`, which copies the eleven pages and `assets/` into
+`_site/` and uploads that. **Do not publish the folder as it stands** — the
+repository also holds 185MB of photographic masters, the AI drafts, the design
+notes and `CLAUDE.md`, none of which belong on a public URL, and Netlify
+uploads a publish folder whole with no exclude list.
+
+Nothing is compiled or bundled by that script. `index.html` at the repository
+root still opens straight from `file://` with the cart working; the script only
+decides what gets uploaded. Run `bash tools/publish.sh` yourself to see exactly
+what would ship.
 
 ---
 
@@ -220,7 +270,10 @@ Two things were done during processing:
 When you replace the photography, keep the same filenames in `assets/images/`
 and nothing else needs to change.
 
-The current photographs are AI-generated placeholders. Two known issues, both
-disappearing when real photography arrives: some product labels contain garbled
-text, and six of the eight boxes are branded "The Olive Project" rather than
-"The Olive Branch".
+Every hamper in the wedding, celebration and corporate collections has been
+reshot and is branded "The Olive Branch"; the frames they replaced sit in
+`assets/images/*/retired/`. The hero and the journal imagery are still
+AI-generated placeholders. One issue runs through all of it: some product
+labels contain garbled text, which is why hamper contents are read off the
+photographs at magnification and anything illegible is left out rather than
+guessed at.

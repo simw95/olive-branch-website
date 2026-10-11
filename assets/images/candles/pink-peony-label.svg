@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The Olive Branch — Peony Blush candle label
+  Physical size: 58 × 32 mm. Print at 100% (vector artwork; no scaling loss).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="58mm" height="32mm" viewBox="0 0 685 378" role="img" aria-labelledby="title desc">
+  <title id="title">The Olive Branch Peony Blush candle label</title>
+  <desc id="desc">Ivory candle label with an Olive Branch leaf mark, Peony Blush scent name, 210 grams, 30 hours, and hand poured soy candle details.</desc>
+  <rect width="685" height="378" fill="#F7F4EC"/>
+
+  <!-- Fine rounded label frame -->
+  <rect x="14" y="13" width="657" height="352" rx="13" fill="none" stroke="#1A1A17" stroke-width="2.1"/>
+
+  <!-- Brand lockup. The leaf paths match the site's canonical mark. -->
+  <g transform="translate(150 39)" fill="none" stroke="#1A1A17" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 22V7"/>
+    <path d="M12 13.5c0-3.2 2.4-5.4 5.6-5.4 0 3.2-2.4 5.4-5.6 5.4z"/>
+    <path d="M12 13.5c0-3.2-2.4-5.4-5.6-5.4 0 3.2 2.4 5.4 5.6 5.4z"/>
+    <path d="M12 8.2c0-2.6 2-4.4 4.6-4.4 0 2.6-2 4.4-4.6 4.4z"/>
+  </g>
+  <text x="365" y="60" text-anchor="middle" fill="#1A1A17" font-family="Bodoni MT" font-size="25" font-weight="500" letter-spacing="5.5">THE OLIVE BRANCH</text>
+
+  <line x1="54" y1="101" x2="631" y2="101" stroke="#1A1A17" stroke-width="2"/>
+
+  <!-- Fragrance -->
+  <text x="342.5" y="210" text-anchor="middle" fill="#1A1A17" font-family="Arial" font-size="58" font-weight="500" letter-spacing="12">PEONY BLUSH</text>
+
+  <!-- Curved divider and product details -->
+  <path d="M58 267 Q342.5 323 627 267" fill="none" stroke="#1A1A17" stroke-width="1.7"/>
+  <line x1="342.5" y1="293" x2="342.5" y2="350" stroke="#1A1A17" stroke-width="1.7"/>
+  <g fill="#1A1A17" font-family="Arial" font-size="18" font-weight="500" text-anchor="middle">
+    <text x="198" y="314">210 GMS</text>
+    <text x="198" y="340">30 HOURS</text>
+    <text x="487" y="314">HAND POURED</text>
+    <text x="487" y="340">SOY CANDLE</text>
+  </g>
+</svg>

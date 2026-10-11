@@ -11,6 +11,27 @@ Desktop.ini
 # Scratch files from local testing (the __ prefix is used for throwaway pages)
 __*.html
 
-# Nothing else is ignored on purpose:
-# the original photography in "Hamper Photos" and "Hero Image 2.png" are the
-# masters everything in assets/images is cut from. They belong in history.
+# Local secrets for `netlify dev`. The deployed site reads its keys from
+# Netlify's own environment variables; this file is only ever on one machine
+# and must not reach the repository.
+.env
+.env.*
+!.env.example
+
+# What `tools/publish.sh` assembles for a deploy. Generated, never edited.
+_site/
+
+# Netlify CLI state
+.netlify/
+
+# Photographic working folders. These are big — 291MB and 69MB — and they are
+# inputs, not outputs: everything the site serves has already been cut from
+# them into assets/images, which IS tracked. Committing them would take the
+# repository past 700MB and make every clone painful, for files that only ever
+# exist on the machine the photography is processed on. Back them up outside
+# git.
+NEW HAMPER PHOTOS/
+Final upload/
+
+# "Hamper Photos" (52MB) stays tracked: it is the original master set, small
+# enough to carry, and the one thing that could not be recreated.

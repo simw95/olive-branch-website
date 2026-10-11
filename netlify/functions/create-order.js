@@ -14,7 +14,22 @@ var OLIVE = require('../../assets/js/data.js');
 
 var MAX_QTY   = 999;   // a single line beyond this is a bulk order, not a cart
 var MAX_LINES = 25;
-var SHIPPING  = 250;   // must match the figure shown in the cart summary
+
+function clean(v, max) {
+  return String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+/* Presence only. The browser already validated shape; this exists so a
+   hand-rolled POST cannot create an order we are unable to fulfil. */
+function addressProblem(a) {
+  if (!a || typeof a !== 'object') { return 'A delivery address is required'; }
+  var need = ['name', 'phone', 'address', 'city', 'state', 'pin', 'email'];
+  for (var i = 0; i < need.length; i++) {
+    if (!clean(a[need[i]], 300)) { return 'A complete delivery address is required'; }
+  }
+  if (!/^\d{6}$/.test(clean(a.pin, 10))) { return 'A valid 6-digit PIN code is required'; }
+  return null;
+}
 
 function json(status, body) {
   return {
@@ -46,6 +61,10 @@ exports.handler = async function (event) {
   if (!items.length) { return json(400, { error: 'Your cart is empty' }); }
   if (items.length > MAX_LINES) { return json(400, { error: 'Too many lines' }); }
 
+  var addr = payload.address || {};
+  var addrError = addressProblem(addr);
+  if (addrError) { return json(400, { error: addrError }); }
+
   /* ---- recompute the amount from the catalogue ------------------------- */
   var subtotal = 0;
   var summary = [];
@@ -59,13 +78,17 @@ exports.handler = async function (event) {
       return json(400, { error: 'Invalid quantity' });
     }
 
-    var unit = OLIVE.priceAt(hamper, qty);   // the quantity band, applied here
+    var unit = OLIVE.priceAt(hamper);        // one price, whatever the quantity
     subtotal += unit * qty;
     summary.push(hamper.name + ' x' + qty);
   }
 
-  var shipping = subtotal >= OLIVE.config.freeShipping ? 0 : SHIPPING;
-  var amount   = Math.round((subtotal + shipping) * 100);   // Razorpay uses paise
+  /* Delivery and the total come from the same helper the cart renders from,
+     so the figure charged is the figure shown. Prices in data.js are
+     GST-inclusive: orderTotals adds delivery only, and reports the tax
+     already inside the subtotal rather than adding any. */
+  var totals = OLIVE.orderTotals(subtotal);
+  var amount = Math.round(totals.total * 100);   // Razorpay uses paise
 
   if (amount < 100) { return json(400, { error: 'Amount too small' }); }
 
@@ -86,6 +109,15 @@ exports.handler = async function (event) {
         receipt: 'olive-' + Date.now(),
         notes: {
           items: summary.join(', ').slice(0, 240),
+          /* The delivery address travels with the order. Razorpay gives us a
+             payer's phone and email and never a postal address, so without
+             these four lines a paid order has nowhere to go. Notes allow 15
+             keys of 256 characters; these are well inside that. */
+          ship_name:  clean(addr.name, 120),
+          ship_phone: clean(addr.phone, 20),
+          ship_addr:  clean(addr.address + ', ' + addr.city + ', ' +
+                            addr.state + ' ' + addr.pin, 250),
+          ship_email: clean(addr.email, 120),
           note_card: String(payload.note || '').slice(0, 240)
         }
       })

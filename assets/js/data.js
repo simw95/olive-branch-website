@@ -20,17 +20,31 @@ OLIVE.config = {
   brand:        'The Olive Branch',
   tagline:      'Curated. Considered. Cherished.',
 
-  whatsapp:     '919920284209',          // country code + number, digits only
-  email:        'hello@theolivebranch.in',   // TODO: replace with the real address
-  phone:        '+91 99202 84209',
-  city:         'Mumbai, India',             // TODO: confirm
-  gstin:        '',                          // TODO: add once registered
+  whatsapp:     '919769016925',          // country code + number, digits only
+  email:        'hello@theolivebranch.in',
+  phone:        '+91 97690 16925',
+  city:         'Mumbai, India',
+  /* Held for invoicing, deliberately never rendered. It used to print in the
+     footer of every page; that was removed because a GSTIN is something a
+     customer needs on an invoice, not something a gift shop announces on all
+     fifteen pages. Nothing reads this today — keep it anyway, the invoice will. */
+  gstin:        '27ADDPW4571E1ZC',
 
-  instagram:    'https://instagram.com/',    // TODO: add real handle
+  instagram:    'https://instagram.com/theolivebranch.in',
   pinterest:    '',
 
   announcement: 'Complimentary delivery across India on orders over ₹5,000.',
   freeShipping: 5000,
+  shipping:     250,                         // charged below freeShipping
+
+  /* Every `price` below is the figure the customer pays, GST included. The
+     cart and create-order.js both take it as it stands and add only delivery;
+     `gstRate` is used to work backwards to the tax component for the cart
+     line and the invoice, never to add anything on.
+
+     Changing `gstRate` therefore changes what the invoice splits out, not
+     what anyone is charged. To change what is charged, change the prices. */
+  gstRate: 0.18,
 
   heroImage:    'assets/images/hero.jpg',
 
@@ -39,17 +53,18 @@ OLIVE.config = {
 };
 
 /* --------------------------------------------------------------------------
-   2. PRICE TIERS
-   Per-hamper price falls as quantity rises. `min` is the first quantity in
-   the band. Each hamper below carries its own `prices` array in this order.
+   2. PRICING
+   One price per hamper. There were five quantity bands here, printed as a
+   table on every product page; bulk is now quoted on enquiry instead, so the
+   table and the band arithmetic are gone. Each hamper kept the figure it
+   charged for a single unit, so nothing was re-priced by the change.
    -------------------------------------------------------------------------- */
-OLIVE.tiers = [
-  { min: 1,   label: '1 – 9'    },
-  { min: 10,  label: '10 – 24'  },
-  { min: 25,  label: '25 – 49'  },
-  { min: 50,  label: '50 – 99'  },
-  { min: 100, label: '100 +'    }
-];
+
+/* Printed under every price, on the product page and under the cart total.
+   Built from `gstRate` rather than written out, so the rate shown and the
+   rate the invoice splits out cannot disagree. */
+OLIVE.config.taxNote = 'Inclusive of ' +
+  +(OLIVE.config.gstRate * 100).toFixed(2) + '% GST.';
 
 /* --------------------------------------------------------------------------
    3. COLLECTIONS
@@ -62,10 +77,8 @@ OLIVE.collections = [
     // Supplied by the client — used once, in its strongest position.
     intro: 'Thoughtfully curated keepsakes to thank your guests for being part of your celebration. Designed to leave a lasting impression long after the wedding day.',
     blurb: 'Favours for the people who travelled, dressed up and stayed to the end.',
-    image: 'assets/images/wedding/wedding-hamper-mini-card.jpg',
-    imageFull: 'assets/images/wedding/wedding-hamper-mini-full.jpg',
-    // Wedding favours are bought by guest count, not by unit.
-    byGuestCount: true
+    image: 'assets/images/wedding/wedding-table-card.jpg',
+    imageFull: 'assets/images/wedding/wedding-table-full.jpg'
   },
   {
     slug: 'celebration',
@@ -73,9 +86,8 @@ OLIVE.collections = [
     page: 'collection-celebration.html',
     intro: 'From birthdays to graduations and every celebration in between, discover beautifully curated gifts that turn life’s moments into lasting memories.',
     blurb: 'For birthdays, anniversaries, new homes and good news.',
-    image: 'assets/images/celebration/celebration-hamper-grand-card.jpg',
-    imageFull: 'assets/images/celebration/celebration-hamper-grand-full.jpg',
-    byGuestCount: false
+    image: 'assets/images/celebration/diya-box-card.jpg',
+    imageFull: 'assets/images/celebration/diya-box-full.jpg'
   },
   {
     slug: 'corporate',
@@ -83,9 +95,8 @@ OLIVE.collections = [
     page: 'collection-corporate.html',
     intro: 'Thoughtfully curated corporate gifts that celebrate partnerships, recognise achievements, and leave a lasting impression.',
     blurb: 'For clients, for Diwali, and for the people who make a company work.',
-    image: 'assets/images/corporate/corporate-hamper-card.jpg',
-    imageFull: 'assets/images/corporate/corporate-hamper-full.jpg',
-    byGuestCount: false
+    image: 'assets/images/corporate/executive-case-card.jpg',
+    imageFull: 'assets/images/corporate/executive-case-full.jpg'
   }
 
   /* ------------------------------------------------------------------
@@ -101,172 +112,412 @@ OLIVE.collections = [
     intro: 'A thoughtful way to ask, thank, and celebrate the women who make your wedding day even more meaningful.',
     blurb: 'To ask, and to thank, the women standing beside you.',
     image: 'assets/images/bridesmaid/bridesmaid-proposal-box-card.jpg',
-    imageFull: 'assets/images/bridesmaid/bridesmaid-proposal-box-full.jpg',
-    byGuestCount: false
+    imageFull: 'assets/images/bridesmaid/bridesmaid-proposal-box-full.jpg'
   }
   ------------------------------------------------------------------ */
 ];
 
 /* --------------------------------------------------------------------------
    4. HAMPERS
-   `prices` maps 1:1 onto OLIVE.tiers above.
+   `price` is what one hamper costs, before GST.
    `ratio` is the native aspect ratio of the full image (w/h), used so product
    pages display photography uncropped.
    -------------------------------------------------------------------------- */
 OLIVE.hampers = [
 
   /* ---------------- Wedding ---------------- */
+  /* Photographed in October, replacing the first four placeholder frames
+     (kept in assets/images/wedding/retired/). Contents below are read off
+     those photographs. The almond butter jar and the lids on the navy box
+     carry brand marks that the edit garbled; they are described rather than
+     named. */
   {
-    id: 'wedding-hamper',
-    name: 'The Wedding Hamper',
+    id: 'wedding-table',
+    name: 'The Wedding Table',
     collection: 'wedding',
     size: 'Full',
-    occasions: ['Wedding', 'Favours', 'Thank you'],
-    prices: [6900, 6490, 6140, 5860, 5520],
-    image: 'assets/images/wedding/wedding-hamper-card.jpg',
-    imageFull: 'assets/images/wedding/wedding-hamper-full.jpg',
-    ratio: 1800 / 1004,
-    focal: '50% 55%',
-    lede: 'Olive oil, wild honey and roasted cashews, in a lidded olive box finished with a printed ribbon.',
-    description: 'The full hamper is the one you send to the people who shaped the day — immediate family, the friends who flew in, the couple who introduced you. It is a pantry of good things rather than a token: oil to cook with, preserve to keep, honey to finish. Everything is shelf-stable, so it travels and it waits.',
+    occasions: ['Wedding', 'Thank you', 'Family'],
+    price: 4500,
+    image: 'assets/images/wedding/wedding-table-card.jpg',
+    imageFull: 'assets/images/wedding/wedding-table-full.jpg',
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'Tree-to-bar chocolate, almond butter and three handcrafted goat’s milk soaps, in our olive box.',
+    description: 'The hamper for the twenty people who made the day happen — parents, the wedding party, the friends who flew in. Chocolate from three makers, two things to open the moment the box does, soaps that go straight to a guest bathroom, and a scented candle for the end of the day. Nothing in it is there to fill a gap, which is the whole difference between a gift and a favour.',
     contents: [
-      'Extra virgin olive oil, in a gold-collared bottle',
-      'Roasted cashews, lightly salted',
-      'Wild berry preserve',
-      'Loose-leaf tea in a drawstring linen pouch',
-      'Raw honey with a turned wooden dipper',
-      'Cold-pressed olive oil soap',
-      'Olive leaf seasoning, in a tin',
-      'Dried lavender, eucalyptus and rosebuds',
-      'Printed satin ribbon and a hand-written note card'
+      'Bon-fiction Lost in an Orange Haze, 64% dark chocolate with candied orange peel and cinnamon',
+      'La Folie dark chocolate sea salt cookie',
+      'Bombay Sweet Shop bhakarwadi and dates kachori',
+      'The Cowboy’s Farm quinoa chips',
+      'Three handcrafted goat’s milk soaps — calendula, grapefruit and jasmine — in a wooden tray',
+      'Gourmet mixed nuts in a drawstring pouch',
+      'Davidoff cappuccino chewing coffee candy',
+      'Boojee Almond butter, 250 g, with a wooden swirler',
+      'Amber scented candle, 210 g',
+      'Magnetic lid sturdy box'
     ],
-    notes: 'Presented in a rigid olive gift box. Ribbon wording can be printed to your own text on orders of 25 or more.'
+    notes: 'Presented in a rigid olive gift box.'
   },
   {
-    id: 'wedding-hamper-mini',
-    name: 'The Wedding Hamper, Mini',
+    id: 'evergreen',
+    name: 'The Evergreen Indulgence',
+    collection: 'wedding',
+    size: 'Full',
+    occasions: ['Wedding', 'Thank you', 'Favours'],
+    price: 3300,
+    image: 'assets/images/wedding/evergreen-card.jpg',
+    imageFull: 'assets/images/wedding/evergreen-full.jpg',
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'Coffee, honey, tree-to-bar chocolate and a hand-poured candle, in the olive box.',
+    description: 'Six things, and every one of them gets used. Coffee for the week after, honey for the toast, a bar worth saving for the evening, and a scented candle for the end of it. It is the thank-you to send the guests who are neither family nor a place setting — the fifty or so people you would have called anyway.',
+    contents: [
+      'Davidoff Rich Aroma instant coffee',
+      'Mixed gourmet nuts in a glass jar',
+      'Bon-fiction The Cranberry Chilli Chase, 64% dark chocolate with cranberry, chilli and sea salt',
+      'Beelicious raw Kashmir honey with a wooden swirler',
+      'Grapefruit goat’s milk soap, 55 g, handcrafted',
+      'Peony Blush scented candle, 210 g',
+      'Magnetic lid sturdy box'
+    ],
+    notes: 'Presented in a rigid olive gift box.'
+  },
+  {
+    id: 'something-blue',
+    name: 'The Something Blue',
     collection: 'wedding',
     size: 'Mini',
     occasions: ['Wedding', 'Favours', 'Thank you'],
-    prices: [2450, 2300, 2180, 2080, 1960],
-    image: 'assets/images/wedding/wedding-hamper-mini-card.jpg',
-    imageFull: 'assets/images/wedding/wedding-hamper-mini-full.jpg',
-    ratio: 1303 / 1043,
+    price: 3850,
+    image: 'assets/images/wedding/something-blue-card.jpg',
+    imageFull: 'assets/images/wedding/something-blue-full.jpg',
+    ratio: 1536 / 1024,
     focal: '50% 50%',
-    lede: 'Fig leaf and vetiver, English rose tea, and a keepsake dish. The favour, at guest-list quantities.',
-    description: 'This is the hamper most weddings order, and they order it by the hundred. It is small enough to sit on a place setting and considered enough that nobody leaves it behind — a candle, a tea, something sweet, and one thing that stays on a bedside table long after the flowers have gone.',
+    lede: 'Biscoff, Smoor chocolate and a set of nested wooden bowls, in a powder-blue floral box.',
+    description: 'Named for the one thing every wedding is told to include. This is the favour that goes out to the guest list — small enough to sit on a place setting, and built around the two things in it that outlast the week: the nested bowls and the brass elephant. The rest is eaten by Tuesday, which is rather the point.',
     contents: [
-      'Fig leaf and vetiver scented candle',
-      'English rose herbal tea, in a glass vial',
-      'Salted caramel almonds in 70% dark chocolate',
-      'Scalloped ceramic trinket dish with a gilded olive sprig',
-      'A little something sweet — linen drawstring pouch',
-      'Letterpress thank-you card, printed with your names'
+      'Lotus Biscoff crunchy spread',
+      'Smoor pistachio and kunafa, 70% dark chocolate',
+      'Four filled chocolates in a lidded box',
+      'Nested wooden bowls, a set of four',
+      'Brass elephant',
+      'Wooden swirler',
+      'Magnetic lid sturdy box'
     ],
-    notes: 'The volume favour. Card wording is printed to your text at no extra cost from 50 hampers.'
+    notes: 'Presented in a rigid powder-blue box, printed with a floral pattern.'
+  },
+  {
+    id: 'peacock-box',
+    name: 'The Peacock Box',
+    collection: 'wedding',
+    size: 'Full',
+    occasions: ['Wedding', 'Favours', 'Mithai', 'Thank you'],
+    price: 2750,
+    image: 'assets/images/wedding/peacock-box-card.jpg',
+    imageFull: 'assets/images/wedding/peacock-box-full.jpg',
+    /* Two views: the trays open, and the same box with its printed lids on,
+       which is how it is handed over. The product page offers both. */
+    gallery: [
+      'assets/images/wedding/peacock-box-full.jpg',
+      'assets/images/wedding/peacock-box-closed-full.jpg'
+    ],
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'Mithai and filled chocolates under printed lids, in a navy box painted with peacocks.',
+    description: 'The return gift, and the one guests photograph before they open it. Eight pieces of mithai in one tray and eight chocolates in the other, three lidded tins alongside, and a printed lid over each tray so it travels closed. The box is lacquered rather than wrapped, so it is still in use long after the sweets have gone.',
+    contents: [
+      'Eight pieces of mithai — coconut, pistachio, saffron and dry fruit',
+      'Eight filled chocolates',
+      'Three lidded tins, gold-rimmed and printed to match the box',
+      'Printed lids over both trays',
+      'Magnetic lid sturdy box'
+    ],
+    notes: 'Presented in a rigid navy box, printed with peacocks and a gold border.'
+  },
+  {
+    id: 'blush-box',
+    name: 'The Blush Set',
+    collection: 'wedding',
+    size: 'Full',
+    occasions: ['Wedding', 'Favours', 'Thank you', 'Engagement'],
+    price: 4000,
+    image: 'assets/images/wedding/blush-box-card.jpg',
+    imageFull: 'assets/images/wedding/blush-box-full.jpg',
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'Rose and pistachio chocolate, blackberry preserves and a stack of lacquered coasters, in blush pink.',
+    description: 'Sweet, without being only sweet. A tree-to-bar bar of rose and pistachio, a jar of preserves that gets finished at breakfast, and a stack of lacquered coasters that stays on a coffee table for years. It is the favour to send when the guest list is smaller and you would rather give one good object than three small ones.',
+    contents: [
+      'Bon-fiction A Rose in Pistachio Skies, 55% dark chocolate with pistachio and rose',
+      'Smoor Chocolate Nibbles, Bright Berry Burst',
+      'La Folie dark chocolate sea salt cookie',
+      'Bonne Maman blackberry preserves',
+      'A stack of lacquered coasters, burgundy with a gilded botanical print',
+      'Brass elephant',
+      'Magnetic lid sturdy box'
+    ],
+    notes: 'Presented in a rigid blush gift box, printed with a floral pattern.'
   },
 
   /* ---------------- Celebration ---------------- */
   {
-    id: 'celebration-hamper',
-    name: 'The Celebration Hamper',
+    id: 'breakfast-basket',
+    name: 'The Pantry Basket',
     collection: 'celebration',
     size: 'Full',
-    occasions: ['Birthday', 'Anniversary', 'Housewarming', 'Thank you'],
-    prices: [4200, 3950, 3740, 3570, 3360],
-    image: 'assets/images/celebration/celebration-hamper-card.jpg',
-    imageFull: 'assets/images/celebration/celebration-hamper-full.jpg',
-    ratio: 1043 / 1303,
+    occasions: ['Housewarming', 'Thank you', 'New home', 'Birthday'],
+    price: 2700,
+    image: 'assets/images/celebration/breakfast-basket-card.jpg',
+    imageFull: 'assets/images/celebration/breakfast-basket-full.jpg',
+    ratio: 1536 / 1024,
     focal: '50% 50%',
-    lede: 'Bergamot and fig, poured by hand in India. Wild forest honey, raw and unfiltered.',
-    description: 'A hamper for the occasions that arrive all year — a birthday, a new flat, an anniversary nobody expected you to remember. Sweet and savoury are balanced deliberately so it suits a household rather than one person, and nothing in it needs to be eaten the same week.',
+    lede: 'Raw Kashmir acacia honey, blackberry preserves and Biscoff, in a round cane basket.',
+    description: 'Three jars and a swirler, and every one of them is finished rather than admired. It is the gift for a new flat, a thank you that should not look like an occasion, and the Sunday morning after. Small, useful, and the basket is worth keeping.',
     contents: [
-      'Bergamot and fig scented soy candle, hand poured in India',
-      'Wild forest honey, raw and unfiltered — 250g',
-      'Artisanal cream truffles',
-      'Premium dry fruits — 200g',
-      'Olive oil soap with lavender',
-      'Turned wooden honey dipper',
-      'Dried florals and a linen drawstring pouch'
+      'Beelicious raw Kashmir acacia honey',
+      'Bonne Maman blackberry preserves',
+      'Lotus Biscoff crunchy spread',
+      'Wooden swirler',
+      'Wicker and cane basket'
     ],
-    notes: 'Presented in a rigid olive gift box with a hand-tied ribbon.'
+    notes: 'Presented in a round cane basket with a handle.'
   },
   {
-    id: 'celebration-hamper-grand',
-    name: 'The Celebration Hamper, Grand',
+    id: 'little-basket',
+    name: 'The Little Indulgence',
     collection: 'celebration',
-    size: 'Grand',
-    occasions: ['Birthday', 'Anniversary', 'Housewarming', 'Festive'],
-    prices: [5800, 5450, 5160, 4930, 4640],
-    image: 'assets/images/celebration/celebration-hamper-grand-card.jpg',
-    imageFull: 'assets/images/celebration/celebration-hamper-grand-full.jpg',
-    ratio: 1800 / 982,
-    focal: '50% 50%',
-    lede: 'Sandalwood and amber, fig and walnut, dark milk chocolate with sea salt.',
-    description: 'The larger celebration box, laid out long rather than deep so everything is visible the moment the lid comes off. It reads as generous without being loud — the right register for a milestone birthday, a fiftieth anniversary, or a Diwali gift to a household you know well.',
-    contents: [
-      'Gourmet roasted nuts — almonds, cashews, pistachios',
-      'Dark milk chocolate with sea salt',
-      'Fig and walnut preserve',
-      'Organic chamomile and lavender tea, in linen',
-      'Forest honey with a wooden dipper',
-      'Sandalwood and amber scented candle',
-      'Handmade truffles',
-      'Lavender and oat soap on a wooden dish',
-      'Dried lavender, eucalyptus and orange'
+    size: 'Full',
+    occasions: ['Birthday', 'Thank you', 'Diwali', 'Just because'],
+    price: 2750,
+    image: 'assets/images/celebration/little-basket-card.jpg',
+    imageFull: 'assets/images/celebration/little-basket-full.jpg',
+    /* Two views: the basket open, and the same basket wrapped in organza as it
+       is delivered. The product page offers both. */
+    gallery: [
+      'assets/images/celebration/little-basket-full.jpg',
+      'assets/images/celebration/little-basket-wrapped-full.jpg'
     ],
-    notes: 'Presented in a rigid olive gift box with a printed satin ribbon.'
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'Nutella biscuits, tree-to-bar chocolate, coffee and honey, in a wicker basket.',
+    description: 'The smallest thing we send that still reads as a gift. Four good names, nothing filling a gap, and a basket that goes on holding fruit long after. It is what to send when the gesture matters more than the occasion.',
+    contents: [
+      'Nutella biscuits',
+      'Bon-fiction The Mango Menace, 55% dark chocolate with Alphonso mango and chilli',
+      'Davidoff Crema Intense coffee',
+      'Beelicious honey with a wooden swirler',
+      'Wicker and cane basket'
+    ],
+    notes: 'Presented in a wicker basket, wrapped in organza and ribboned.'
+  },
+  {
+    id: 'slow-morning',
+    name: 'The Leisure Edit',
+    collection: 'celebration',
+    size: 'Full',
+    occasions: ['Birthday', 'Thank you', 'New home', 'Get well'],
+    price: 3200,
+    image: 'assets/images/celebration/slow-morning-card.jpg',
+    imageFull: 'assets/images/celebration/slow-morning-full.jpg',
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'Coffee, honey, chocolate and a hand-poured candle, with a calendula goat’s milk soap on a wooden dish.',
+    description: 'An hour rather than an occasion. Coffee worth grinding the morning around, honey for the toast, a bar to break into in the evening, and a scented candle for the end of it. The soap arrives on its own wooden dish, which is the detail people remember.',
+    contents: [
+      'Davidoff Rich Aroma instant coffee',
+      'Calendula goat’s milk soap, 115 g, on a wooden dish',
+      'Bon-fiction The Cranberry Chilli Chase, 64% dark chocolate with cranberry, chilli and sea salt',
+      'Nutella hazelnut spread',
+      'Peony Blush scented candle, 210 g',
+      'Beelicious honey with a wooden swirler',
+      'Magnetic lid sturdy box'
+    ],
+    notes: 'Presented in a rigid olive gift box.'
+  },
+
+  /* ---------------- Celebration · Diwali ---------------- */
+  /* `section` puts these in their own block on the collection page, and the
+     nav links straight to it. */
+  {
+    id: 'diya-box',
+    name: 'The Diya Box',
+    collection: 'celebration',
+    section: 'Diwali',
+    size: 'Full',
+    occasions: ['Diwali', 'Client gifting', 'Thank you'],
+    price: 3600,
+    image: 'assets/images/celebration/diya-box-card.jpg',
+    imageFull: 'assets/images/celebration/diya-box-full.jpg',
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'A brass diya urli, three jars of premium nuts and an amber candle, in a burgundy box.',
+    description: 'Built around the brass urli at its centre — a ring of lamps that gets filled with oil and lit, and then put away for next year and the year after. Around it, three jars of nuts to hand round and a scented candle. The box most people send when they want the gift to be lit rather than eaten.',
+    contents: [
+      'Brass diya urli',
+      'Premium cashews, 200 g',
+      'Premium almonds, 200 g',
+      'Premium pistachios, 200 g',
+      'Amber scented candle, 210 g',
+      'Magnetic lid sturdy box'
+    ],
+    notes: 'Presented in a rigid burgundy gift box.'
+  },
+  {
+    id: 'puja-box',
+    name: 'The Puja Box',
+    collection: 'celebration',
+    section: 'Diwali',
+    size: 'Full',
+    occasions: ['Diwali', 'Housewarming', 'Blessing'],
+    price: 2800,
+    image: 'assets/images/celebration/puja-box-card.jpg',
+    imageFull: 'assets/images/celebration/puja-box-full.jpg',
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'A brass kalash and a brass cow and calf, with nuts, chocolate and a handcrafted goat’s milk soap.',
+    description: 'For the part of Diwali that happens before anyone eats. A brass kalash and a cow and calf for the puja, both of them objects that stay out all year, and enough alongside to make it a gift rather than an offering. Also the box to send for a housewarming.',
+    contents: [
+      'Engraved brass kalash',
+      'Brass cow and calf sculpture',
+      'Mixed gourmet nuts in a glass jar',
+      'Bon-fiction The Cranberry Chilli Chase, 64% dark chocolate with cranberry, chilli and sea salt',
+      'Calendula goat’s milk soap, 55 g, handcrafted',
+      'Lotus-painted trinket tin',
+      'Magnetic lid sturdy box'
+    ],
+    notes: 'Presented in a rigid olive gift box.'
+  },
+  {
+    id: 'card-table',
+    name: 'The Brass Box',
+    collection: 'celebration',
+    section: 'Diwali',
+    size: 'Full',
+    occasions: ['Diwali', 'Client gifting', 'Thank you', 'Host gift'],
+    price: 3400,
+    image: 'assets/images/celebration/card-table-card.jpg',
+    imageFull: 'assets/images/celebration/card-table-full.jpg',
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'Three jars of gourmet nuts, Davidoff coffee and a candle in hammered brass, in a burgundy box.',
+    description: 'Named for the vessel at its centre — a candle hand-poured into hammered brass, which stays out long after the lights come down. Around it, three jars to pass round a table and coffee to keep a late evening going. The same burgundy box as The Diya Box, built for the night rather than the puja.',
+    contents: [
+      'Gourmet cashews, 300 g',
+      'Gourmet almonds, 300 g',
+      'Gourmet pistachios, 300 g',
+      'Davidoff Fine Aroma instant coffee',
+      'Davidoff mocha chewing coffee candy, 50 g',
+      'Hand-poured candle in a hammered brass vessel',
+      'Magnetic lid sturdy box'
+    ],
+    notes: 'Presented in a rigid burgundy gift box.'
   },
 
   /* ---------------- Corporate ---------------- */
+  /* Photographed properly in October: a cane basket, an olive box and a navy
+     case. Contents below are read off those photographs. Two labels in the
+     basket could not be made out — a second Bombay Sweet Shop pouch and the
+     Atom Eats flavour — and are left out rather than guessed at. */
   {
-    id: 'corporate-hamper',
-    name: 'The Corporate Hamper',
-    collection: 'corporate',
-    size: 'Full',
-    occasions: ['Diwali', 'Client gifting', 'Onboarding', 'Milestone'],
-    prices: [8500, 7990, 7570, 7230, 6800],
-    image: 'assets/images/corporate/corporate-hamper-card.jpg',
-    imageFull: 'assets/images/corporate/corporate-hamper-full.jpg',
-    ratio: 1800 / 982,
-    focal: '50% 50%',
-    lede: 'A full-grain leather journal, Belgian truffles, Darjeeling and saffron, and a small brass Ganesha.',
-    description: 'The hamper for the relationships a business actually depends on — a long-standing client, a partner who took a risk on you, a director in their tenth year. It carries one thing that lasts, one thing to share around a table, and one thing for the desk. Suited to Diwali, to closing a deal, and to saying thank you when it matters.',
-    contents: [
-      'Full-grain leather journal',
-      'Brass-trimmed pen',
-      'Belgian chocolate truffles',
-      'Gourmet nuts in a glass clip-top jar',
-      'Festive date and fig chutney',
-      'Organic Darjeeling and saffron tea',
-      'Ceramic keepsake jar with a brass knob',
-      'Brass Ganesha and an incense holder',
-      'Desk card set with a leather tag'
-    ],
-    notes: 'Your logo can be foiled onto the box lid and printed on the ribbon from 25 hampers. GST invoice issued on every order.'
-  },
-  {
-    id: 'corporate-hamper-mini',
-    name: 'The Corporate Hamper, Mini',
+    id: 'desk-press',
+    name: 'The Desk Press',
     collection: 'corporate',
     size: 'Mini',
-    occasions: ['Diwali', 'Client gifting', 'Onboarding', 'Team'],
-    prices: [3200, 3010, 2850, 2720, 2560],
-    image: 'assets/images/corporate/corporate-hamper-mini-card.jpg',
-    imageFull: 'assets/images/corporate/corporate-hamper-mini-full.jpg',
-    ratio: 1800 / 982,
+    occasions: ['Client gifting', 'Onboarding', 'Team', 'Diwali'],
+    price: 1800,
+    image: 'assets/images/corporate/desk-press-card.jpg',
+    imageFull: 'assets/images/corporate/desk-press-full.jpg',
+    ratio: 1536 / 1024,
     focal: '50% 50%',
-    lede: 'Olive oil, Kalamata tapenade and a soft cheese, with an olive-wood board to serve them on.',
-    description: 'The hamper to send to an entire floor. It is a small table rather than a box of snacks — oil, tapenade, cheese and the board to serve them on — which makes it land as a gesture rather than a giveaway, at a price that survives a headcount of three hundred.',
+    lede: 'A glass cafetière with quinoa chips, salted pretzels and gourmet nuts, in a terracotta box.',
+    description: 'The one to send a whole team without the figure becoming the problem. A cafetière is the rare desk object that gets used every morning rather than put in a drawer, and the three things packed around it are what people reach for at four o’clock. The smallest box we make for corporate, and the least likely to be passed on.',
     contents: [
-      'Extra virgin olive oil',
-      'Kalamata olive tapenade',
-      'Soft cheese with an olive-wood board and knife',
-      'Almonds in a linen drawstring pouch',
-      'Wax-sealed artisan soap',
-      'Dried lavender'
+      'Glass and steel cafetière',
+      'The Cowboy’s Farm quinoa chips',
+      'Atom Eats salted mini pretzel knots',
+      'Mixed gourmet nuts in a drawstring pouch',
+      'Magnetic lid sturdy box'
     ],
-    notes: 'Our most-ordered hamper for company-wide gifting. Ships to multiple addresses at no extra handling cost.'
+    notes: 'Presented in a rigid terracotta gift box.'
+  },
+  {
+    id: 'signature-box',
+    name: 'The Signature Box',
+    collection: 'corporate',
+    size: 'Full',
+    occasions: ['Diwali', 'Client gifting', 'Onboarding', 'Team'],
+    price: 3850,
+    image: 'assets/images/corporate/signature-box-card.jpg',
+    imageFull: 'assets/images/corporate/signature-box-full.jpg',
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'A refined edit of chocolate, nuts and desk-side essentials, presented in our signature olive box.',
+    description: 'The one that goes out by the hundred. A journal somebody will actually keep, two chocolates worth stopping for, and a tin of drinking chocolate — enough to read as a gift rather than a giveaway, at a price that survives a headcount. It is the hamper to send a whole floor at Diwali, or to put on a desk on a first morning.',
+    contents: [
+      'Full-grain leather journal',
+      '4700BC Nutty Tuxedo chocolate popcorn',
+      'Bon-fiction Lost in an Orange Haze, 64% dark chocolate with candied orange peel and cinnamon',
+      'La Folie dark chocolate sea salt cookie',
+      'Gourmet mixed nuts in a glass jar',
+      'Manam Coffee Milk drinking chocolate',
+      'Magnetic lid sturdy box'
+    ],
+    notes: 'Presented in a rigid olive gift box.'
+  },
+  {
+    id: 'grand-edit',
+    name: 'The Festive Collection',
+    collection: 'corporate',
+    /* Also sold as a celebration hamper. Same box, same price, same
+       photograph — one entry, shown on two pages. */
+    alsoIn: ['celebration'],
+    size: 'Full',
+    occasions: ['Diwali', 'Client gifting', 'Thank you', 'Team'],
+    price: 5000,
+    image: 'assets/images/corporate/grand-edit-card.jpg',
+    imageFull: 'assets/images/corporate/grand-edit-full.jpg',
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'A generous cane basket filled with gourmet treats, coffee, chocolate and nuts.',
+    description: 'A basket rather than a box, and meant to be opened in front of people. Chocolate from three makers, coffee, something sweet and something salted — the sort of spread that gets put in the middle of a table and emptied by the afternoon. The basket itself is worth keeping, which is half the point.',
+    contents: [
+      'Bon-fiction The Mango Menace, 55% dark chocolate with Alphonso mango and chilli',
+      'La Folie dark chocolate sea salt cookie',
+      'Manam milk chocolate',
+      'Davidoff mocha coffee',
+      'Lotus Biscoff smooth spread',
+      'Bombay Sweet Shop Bombay bhel chikki',
+      'Gourmet mixed nuts in a glass jar',
+      'Wild honey with a wooden swirler',
+      'Wicker and cane basket'
+    ],
+    notes: 'Presented in a cane basket with leather handles, debossed with the mark.'
+  },
+  {
+    id: 'executive-case',
+    name: 'The Executive Case',
+    collection: 'corporate',
+    size: 'Full',
+    occasions: ['Diwali', 'Client gifting', 'Milestone', 'Thank you'],
+    price: 6400,
+    image: 'assets/images/corporate/executive-case-card.jpg',
+    imageFull: 'assets/images/corporate/executive-case-full.jpg',
+    ratio: 1536 / 1024,
+    focal: '50% 50%',
+    lede: 'A statement navy case with a leather journal, premium nuts, honey and tree-to-bar chocolate.',
+    description: 'The one you send to the client who stayed through a bad quarter. It arrives as a case with brass catches rather than a box, which is the first thing anyone notices, and it is heavy — three jars of nuts, honey with a swirler, a journal, a candle and chocolate from a maker worth naming. Kept on a shelf long after it is empty.',
+    contents: [
+      'Full-grain leather journal',
+      'Bon-fiction Memories of a Brown Harvest, 64% dark chocolate',
+      '4700BC Nutty Tuxedo chocolate popcorn',
+      'La Folie dark chocolate sea salt cookie',
+      'Three jars of gourmet nuts',
+      'Beelicious raw honey with a wooden swirler',
+      'Nutella and Lotus Biscoff biscuits',
+      'Peony Blush candle, hand-poured in amber glass',
+      'Navy and brown vintage trunk'
+    ],
+    notes: 'Presented in a rigid navy case with brass catches and a leather handle.'
   }
 
   /* ------------------------------------------------------------------
@@ -279,7 +530,7 @@ OLIVE.hampers = [
     collection: 'bridesmaid',
     size: 'Full',
     occasions: ['Wedding', 'Bridesmaid', 'Bachelorette'],
-    prices: [4800, 4510, 4270, 4080, 3840],
+    price: 4800,
     image: 'assets/images/bridesmaid/bridesmaid-hamper-card.jpg',
     imageFull: 'assets/images/bridesmaid/bridesmaid-hamper-full.jpg',
     ratio: 1800 / 1004,
@@ -294,7 +545,8 @@ OLIVE.hampers = [
       'Tea sachets in a drawstring pouch',
       'Compact mirror, engraved to order',
       'Beaded bracelet',
-      'Gold-foil chocolates'
+      'Gold-foil chocolates',
+      'Magnetic lid sturdy box'
     ],
     notes: 'Engraving to your own text is included from 10 hampers.'
   },
@@ -304,7 +556,7 @@ OLIVE.hampers = [
     collection: 'bridesmaid',
     size: 'Mini',
     occasions: ['Wedding', 'Bridesmaid', 'Proposal'],
-    prices: [5400, 5070, 4800, 4590, 4320],
+    price: 5400,
     image: 'assets/images/bridesmaid/bridesmaid-proposal-box-card.jpg',
     imageFull: 'assets/images/bridesmaid/bridesmaid-proposal-box-full.jpg',
     ratio: 1303 / 1043,
@@ -319,39 +571,21 @@ OLIVE.hampers = [
       'Rosé eye masks',
       'Blush rose scented candle',
       'Tinted lip balm',
-      'Rosé and peony room spray'
+      'Rosé and peony room spray',
+      'Magnetic lid sturdy box'
     ],
     notes: 'Card wording is printed to your text at no extra cost.'
   }
   ------------------------------------------------------------------ */
 ];
 
-/* --------------------------------------------------------------------------
-   5. JOURNAL
+/* The Journal — three gifting guides and an index page — was removed on
+   2026-10-10, to be brought back when there is something to put in it.
+   It lived here as `OLIVE.journal`, rendered by renderJournal() in
+   render.js, linked from the header, the footer, the home page and two
+   collection pages. Nothing else read it, so putting it back is this
+   array, that function, and those links.
    -------------------------------------------------------------------------- */
-OLIVE.journal = [
-  {
-    slug: 'journal-wedding-favours.html',
-    title: 'How many favours, and what goes in them',
-    eyebrow: 'Weddings',
-    excerpt: 'Ordering by guest count rather than by guess — a working method for the couple who has three hundred people to thank and six weeks to do it in.',
-    image: 'assets/images/wedding/wedding-hamper-mini-card.jpg'
-  },
-  {
-    slug: 'journal-corporate-gifting.html',
-    title: 'Corporate gifting, without the guesswork',
-    eyebrow: 'Corporate',
-    excerpt: 'What to send a client versus what to send a team, why the same box rarely works for both, and how to keep a Diwali list of four hundred from becoming a second job.',
-    image: 'assets/images/corporate/corporate-hamper-card.jpg'
-  },
-  {
-    slug: 'journal-choosing-by-occasion.html',
-    title: 'Choosing by occasion',
-    eyebrow: 'Gifting',
-    excerpt: 'A birthday is not an anniversary and neither is a housewarming. A short guide to matching the box to the moment.',
-    image: 'assets/images/celebration/celebration-hamper-card.jpg'
-  }
-];
 
 /* --------------------------------------------------------------------------
    6. HELPERS  —  used across the site
@@ -360,16 +594,35 @@ OLIVE.inr = function (n) {
   return '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 };
 
-OLIVE.tierIndex = function (qty) {
-  var i = 0;
-  for (var t = 0; t < OLIVE.tiers.length; t++) {
-    if (qty >= OLIVE.tiers[t].min) { i = t; }
-  }
-  return i;
+/* The one place delivery, GST and the total are worked out. The cart renders
+   from it and create-order.js charges from it, so the figure taken can never
+   disagree with the figure shown.
+
+   Prices in `prices` are GST-inclusive, so GST is **extracted, not added**:
+   a hamper listed at 3,400 is charged at 3,400 and carries 518 of tax inside
+   that figure. `gst` is reported so the cart and the invoice can show the
+   component, and it is deliberately NOT part of the sum — adding it would
+   charge the tax twice. Delivery is added to the listed price as it stands.
+
+   This reverses the arrangement that stood for one week in October, where
+   prices were entered before tax and 18% was added at checkout. */
+OLIVE.orderTotals = function (subtotal) {
+  var shipping = subtotal >= OLIVE.config.freeShipping ? 0 : OLIVE.config.shipping;
+  var net = Math.round(subtotal / (1 + OLIVE.config.gstRate));
+  return {
+    subtotal: subtotal,
+    gst:      subtotal - net,          // the tax already inside the subtotal
+    shipping: shipping,
+    total:    subtotal + shipping
+  };
 };
 
-OLIVE.priceAt = function (hamper, qty) {
-  return hamper.prices[OLIVE.tierIndex(qty)];
+/* One price, whatever the quantity. Kept as a function rather than reading
+   `hamper.price` at each call site, because the cart, the product page and
+   the server-side recompute all go through it — one place to change if
+   pricing ever gains a rule again. */
+OLIVE.priceAt = function (hamper) {
+  return hamper.price;
 };
 
 OLIVE.getHamper = function (id) {
@@ -386,20 +639,34 @@ OLIVE.getCollection = function (slug) {
   return null;
 };
 
+/* A hamper lives in one collection and may be shown in others. The Festive Collection
+   is the case this exists for: the same box, the same price and the same
+   photograph, sold both as a corporate gift and as a celebration one. It stays
+   a single entry, so editing it once changes both pages. */
 OLIVE.hampersIn = function (slug) {
-  return OLIVE.hampers.filter(function (h) { return h.collection === slug; });
+  return OLIVE.hampers.filter(function (h) {
+    return h.collection === slug ||
+           (h.alsoIn || []).indexOf(slug) !== -1;
+  });
 };
 
-/* Returns the next tier up from `qty`, or null if already at the top. */
-OLIVE.nextTier = function (hamper, qty) {
-  var i = OLIVE.tierIndex(qty);
-  if (i >= OLIVE.tiers.length - 1) { return null; }
-  var next = OLIVE.tiers[i + 1];
-  return {
-    need: next.min - qty,
-    at: next.min,
-    saving: hamper.prices[i] - hamper.prices[i + 1]
-  };
+/* Collections can be shown in named blocks. Celebration splits into its
+   general hampers and a Diwali block, which the nav links straight to. A
+   hamper with no `section` belongs to the collection's main block. */
+OLIVE.sectionsIn = function (slug) {
+  var all = OLIVE.hampersIn(slug);
+  var main = all.filter(function (h) { return !h.section; });
+  var named = [];
+  all.forEach(function (h) {
+    if (!h.section) { return; }
+    var found = null;
+    for (var i = 0; i < named.length; i++) {
+      if (named[i].name === h.section) { found = named[i]; }
+    }
+    if (!found) { found = { name: h.section, hampers: [] }; named.push(found); }
+    found.hampers.push(h);
+  });
+  return { main: main, sections: named };
 };
 
 /* Builds a wa.me link with a context-aware prefilled message. */

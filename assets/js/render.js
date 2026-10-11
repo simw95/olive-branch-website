@@ -31,8 +31,8 @@
         '<h3 class="card-title">' + esc(h.name) + '</h3>' +
         '<p class="small" style="margin:0">' + esc(h.lede) + '</p>' +
         '<div class="card-meta">' +
-          '<span class="card-from">' + esc(h.size) + ' · from ' + OLIVE.inr(h.prices[h.prices.length - 1]) + ' at ' + OLIVE.tiers[OLIVE.tiers.length - 1].label + '</span>' +
-          '<span class="card-price">' + OLIVE.inr(h.prices[0]) + '</span>' +
+          '<span class="card-from">' + esc(h.size) + '</span>' +
+          '<span class="card-price">' + OLIVE.inr(h.price) + '</span>' +
         '</div>' +
       '</a>';
   }
@@ -41,6 +41,48 @@
     if (!mount) { return; }
     mount.className = 'grid grid-3';
     mount.innerHTML = hampers.map(hamperCard).join('');
+  }
+
+  /* A collection that carries named sections draws them as blocks, each with
+     its own heading and an id the nav can link to. Celebration is the case:
+     the Diwali hampers sit together rather than scattered among the rest.
+     A collection with no sections renders exactly as it always did. */
+  function renderCollectionGrid(mount, slug) {
+    if (!mount) { return; }
+    var split = OLIVE.sectionsIn(slug);
+    if (!split.sections.length) {
+      renderGrid(mount, OLIVE.hampersIn(slug));
+      return;
+    }
+
+    mount.className = '';
+    var html = '<div class="grid grid-3">' +
+                 split.main.map(hamperCard).join('') +
+               '</div>';
+
+    split.sections.forEach(function (sec) {
+      html +=
+        '<div class="collection-section" id="' + esc(sectionId(sec.name)) + '">' +
+          '<div class="centred collection-section-head">' +
+            '<span class="label">' + esc(sec.name) + '</span>' +
+            '<h2 class="d-m">' + esc(sectionHeading(sec.name)) + '</h2>' +
+          '</div>' +
+          '<div class="grid grid-3">' + sec.hampers.map(hamperCard).join('') + '</div>' +
+        '</div>';
+    });
+    mount.innerHTML = html;
+  }
+
+  /* The anchor the nav links to, and the line above the block. Kept here
+     rather than in data.js so a section needs only its name there. */
+  function sectionId(name) {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+  var SECTION_HEADINGS = {
+    Diwali: 'For the festival of lights.'
+  };
+  function sectionHeading(name) {
+    return SECTION_HEADINGS[name] || name + '.';
   }
 
   /* ------------------------------------------------- collection gateways */
@@ -60,34 +102,15 @@
     }).join('');
   }
 
-  /* ------------------------------------------------------- journal cards */
-  function renderJournal(mount, limit) {
-    if (!mount) { return; }
-    var posts = limit ? OLIVE.journal.slice(0, limit) : OLIVE.journal;
-    mount.className = 'grid grid-3';
-    mount.innerHTML = posts.map(function (p, i) {
-      var d = i === 0 ? '' : (i === 1 ? ' reveal-d1' : ' reveal-d2');
-      return '' +
-        '<a class="card reveal' + d + '" href="' + p.slug + '">' +
-          '<div class="card-media"><img src="' + p.image + '" alt="" loading="lazy"></div>' +
-          '<span class="label" style="margin-bottom:0.5rem">' + esc(p.eyebrow) + '</span>' +
-          '<h3 class="card-title">' + esc(p.title) + '</h3>' +
-          '<p class="small" style="margin:0">' + esc(p.excerpt) + '</p>' +
-        '</a>';
-    }).join('');
-  }
-
-  /* --------------------------------------------------------- tier table */
-  function tierTable(h, qty) {
-    var active = OLIVE.tierIndex(qty);
-    var rows = OLIVE.tiers.map(function (t, i) {
-      return '<tr class="' + (i === active ? 'is-active' : '') + '">' +
-               '<td>' + t.label + ' hampers</td>' +
-               '<td>' + OLIVE.inr(h.prices[i]) + ' each</td>' +
-             '</tr>';
-    }).join('');
-    return '<table class="tiers"><thead><tr><th>Quantity</th><th>Price</th></tr></thead>' +
-           '<tbody>' + rows + '</tbody></table>';
+  /* ------------------------------------------------------- bulk enquiry */
+  /* A table of five quantity bands used to sit here, on every product page.
+     Bulk is quoted on enquiry now, so the table is one line and a message. */
+  function bulkLine(h) {
+    return '<p class="notes" style="margin-top:2rem">' +
+             '<a href="' + esc(OLIVE.whatsappLink(
+               'Hello, I would like to enquire about the catalogues and bulk prices for ' +
+               h.name + '.')) + '">' +
+             'Send us a message to enquire about the catalogues and bulk prices.</a></p>';
   }
 
   /* -------------------------------------------------------- product page */
@@ -110,15 +133,34 @@
     document.body.setAttribute('data-wa', 'Hello, I would like to enquire about the ' + h.name + '.');
 
     var qty = 1;
+    /* One photograph unless the hamper lists more. */
+    var views = (h.gallery && h.gallery.length) ? h.gallery : [h.imageFull];
 
     mount.innerHTML = '' +
       '<div class="product">' +
         '<div>' +
           '<div class="product-media reveal">' +
-            '<img src="' + h.imageFull + '" alt="' + esc(h.name) + '" data-zoom="' + h.imageFull + '" ' +
+            '<img src="' + views[0] + '" alt="' + esc(h.name) + '" data-zoom="' + views[0] + '" ' +
               'style="aspect-ratio:' + h.ratio.toFixed(3) + '">' +
-            '<span class="zoom-hint">Click to enlarge</span>' +
+            // Wording is set by site.js, which knows whether this visitor gets
+            // the hover panel or the tap overlay. "Click" would be a lie on a
+            // phone. Empty here so nothing wrong flashes before that runs.
+            '<span class="zoom-hint"></span>' +
           '</div>' +
+          /* A hamper photographed more than once offers the other views here.
+             One view draws nothing at all, so every other product page is
+             exactly as it was. */
+          (views.length > 1
+            ? '<div class="product-views" data-views>' +
+                views.map(function (src, i) {
+                  return '<button type="button" class="product-view" data-view="' + esc(src) + '"' +
+                         (i === 0 ? ' aria-current="true"' : '') +
+                         ' aria-label="View ' + (i + 1) + ' of ' + views.length + '">' +
+                         '<img src="' + esc(src) + '" alt="" loading="lazy">' +
+                         '</button>';
+                }).join('') +
+              '</div>'
+            : '') +
           '<div class="product-detail">' +
             '<div class="reveal">' +
               '<span class="label">About this hamper</span>' +
@@ -137,13 +179,13 @@
           '<h1 class="d-l" style="margin-bottom:1rem">' + esc(h.name) + '</h1>' +
           '<p class="lede" style="margin-bottom:1.75rem">' + esc(h.lede) + '</p>' +
           '<div class="price-now" data-price></div>' +
+          '<p class="price-tax">' + esc(OLIVE.config.taxNote) + '</p>' +
           '<div style="display:flex;gap:1rem;align-items:center;margin:1.5rem 0">' +
             '<div class="qty">' +
               '<button type="button" data-step="-1" aria-label="Reduce quantity">−</button>' +
               '<input type="number" min="1" value="1" data-qty aria-label="Quantity">' +
               '<button type="button" data-step="1" aria-label="Increase quantity">+</button>' +
             '</div>' +
-            '<span class="small" data-tierlabel></span>' +
           '</div>' +
           '<div class="stack-sm">' +
             '<button class="btn btn-solid btn-block" type="button" data-add>Add to cart</button>' +
@@ -151,34 +193,43 @@
           '</div>' +
           '<p class="small" style="margin-top:1.25rem">' +
             '<a href="bulk.html?hamper=' + h.id + '">Enquire for ' + OLIVE.config.bulkThreshold + '+ hampers</a>' +
-            ' — bespoke branding, multiple addresses and GST invoicing.</p>' +
-          '<div style="margin-top:2rem" data-tiers>' + tierTable(h, 1) + '</div>' +
+            ' — bespoke branding and GST invoicing.</p>' +
+          bulkLine(h) +
           '<p class="notes" style="margin-top:1.5rem">' + esc(h.notes) + '</p>' +
         '</div>' +
       '</div>';
 
     /* ---- interactive bits ---- */
+    /* Swapping src and data-zoom on the SAME element keeps the magnifier
+       working: site.js bound to that element once, and reads data-zoom at the
+       moment of the click rather than caching it. */
+    var viewBar = mount.querySelector('[data-views]');
+    if (viewBar) {
+      viewBar.addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-view]');
+        if (!b) { return; }
+        var src = b.getAttribute('data-view');
+        var main = mount.querySelector('.product-media img');
+        if (!main || main.getAttribute('src') === src) { return; }
+        main.setAttribute('src', src);
+        main.setAttribute('data-zoom', src);
+        main.style.transform = '';          // drop any magnification mid-swap
+        Array.prototype.forEach.call(viewBar.querySelectorAll('button'), function (o) {
+          o.removeAttribute('aria-current');
+        });
+        b.setAttribute('aria-current', 'true');
+      });
+    }
+
     var input = mount.querySelector('[data-qty]');
     var priceEl = mount.querySelector('[data-price]');
-    var tierEl = mount.querySelector('[data-tierlabel]');
-    var tiersEl = mount.querySelector('[data-tiers]');
-
     function paint() {
-      var unit = OLIVE.priceAt(h, qty);
+      var unit = OLIVE.priceAt(h);
       // The total only earns its place once there is more than one.
       priceEl.innerHTML = OLIVE.inr(unit) +
         '<span class="price-each">each' +
         (qty > 1 ? ' · ' + OLIVE.inr(unit * qty) + ' for ' + qty : '') +
         '</span>';
-      tiersEl.innerHTML = tierTable(h, qty);
-
-      var nx = OLIVE.nextTier(h, qty);
-      if (nx) {
-        tierEl.innerHTML = nx.need + ' more reaches ' + OLIVE.inr(h.prices[OLIVE.tierIndex(qty) + 1]) +
-                           ' each.';
-      } else {
-        tierEl.textContent = 'Best price reached.';
-      }
     }
 
     function setQty(n) {
@@ -210,6 +261,7 @@
 
     renderRelated(document.getElementById('related'), h);
     productSchema(h);
+    setCanonical(h);
   }
 
   function renderRelated(mount, current) {
@@ -219,6 +271,24 @@
     });
     var other = OLIVE.hampers.filter(function (x) { return x.collection !== current.collection; });
     renderGrid(mount, same.concat(other).slice(0, 3));
+  }
+
+  /* product.html is one file serving every hamper, so the canonical in its
+     head points at the bare file. Left there, all fifteen hampers would claim
+     the same URL and a search engine would keep one and drop the rest. This
+     rewrites it — and og:url with it — to the hamper actually being shown.
+     Only ever absolute: a relative canonical is ignored. */
+  function setCanonical(h) {
+    var base = (document.querySelector('link[rel="canonical"]') || {}).href || '';
+    if (!/^https?:/.test(base)) { return; }
+    var url = base.split('?')[0] + '?id=' + encodeURIComponent(h.id);
+    document.querySelector('link[rel="canonical"]').href = url;
+    var og = document.querySelector('meta[property="og:url"]');
+    if (og) { og.setAttribute('content', url); }
+    var img = document.querySelector('meta[property="og:image"]');
+    if (img && h.imageFull) {
+      img.setAttribute('content', base.replace(/\/[^\/]*$/, '/') + h.imageFull);
+    }
   }
 
   function productSchema(h) {
@@ -232,10 +302,9 @@
       image: h.imageFull,
       brand: { '@type': 'Brand', name: OLIVE.config.brand },
       offers: {
-        '@type': 'AggregateOffer',
+        '@type': 'Offer',
         priceCurrency: 'INR',
-        lowPrice: h.prices[h.prices.length - 1],
-        highPrice: h.prices[0],
+        price: h.price,
         availability: 'https://schema.org/InStock'
       }
     });
@@ -262,6 +331,67 @@
       s.onerror = function () { reject(new Error('The payment window could not load.')); };
       document.head.appendChild(s);
     });
+  }
+
+  /* ------------------------------------------------------ delivery address */
+  /* Bound to the same fields both checkout routes read, so the address cannot
+     be right for one and missing for the other. */
+  function addressInputs(mount) {
+    var map = {};
+    Address.fields.forEach(function (k) {
+      map[k] = mount.querySelector('#s-' + (k === 'address' ? 'addr' : k));
+    });
+    return map;
+  }
+
+  function initAddress(mount) {
+    var els = addressInputs(mount);
+    if (!els.name) { return; }
+
+    // Restore whatever they typed last time — an abandoned cart that makes you
+    // retype your address is an abandoned cart twice.
+    var saved = Address.read();
+    Address.fields.forEach(function (k) {
+      if (els[k] && saved[k]) { els[k].value = saved[k]; }
+      if (els[k]) {
+        els[k].addEventListener('input', function () {
+          var now = {};
+          Address.fields.forEach(function (j) { now[j] = els[j] ? els[j].value : ''; });
+          Address.save(now);
+          var err = mount.querySelector('[data-ship-error]');
+          if (err && !err.hidden && Address.validate(now).length === 0) { err.hidden = true; }
+        });
+      }
+    });
+  }
+
+  /* Returns true when the order may proceed; otherwise says what is missing
+     and puts the cursor in the first offending field. */
+  function requireAddress(mount) {
+    var els = addressInputs(mount);
+    if (!els.name) { return true; }
+
+    var a = {};
+    Address.fields.forEach(function (k) { a[k] = els[k] ? els[k].value : ''; });
+    Address.save(a);
+
+    var missing = Address.validate(a);
+    var err = mount.querySelector('[data-ship-error]');
+    if (!missing.length) { if (err) { err.hidden = true; } return true; }
+
+    if (err) {
+      err.textContent = 'Before we can send this, we need ' +
+        (missing.length > 1
+          ? missing.slice(0, -1).join(', ') + ' and ' + missing[missing.length - 1]
+          : missing[0]) + '.';
+      err.hidden = false;
+    }
+    // Put the cursor in the first field that is actually wrong.
+    for (var i = 0; i < Address.fields.length; i++) {
+      var k = Address.fields[i];
+      if (els[k] && !Address.fieldOk(k, a[k])) { els[k].focus(); break; }
+    }
+    return false;
   }
 
   function initPayment(mount) {
@@ -295,17 +425,24 @@
     payBtn.addEventListener('click', function (e) {
       e.preventDefault();
       if (payBtn.getAttribute('aria-busy') === 'true') { return; }
+      // Never open a payment window we cannot ship the result of.
+      if (!requireAddress(mount)) { return; }
       errBox.hidden = true;
       payBtn.setAttribute('aria-busy', 'true');
       payBtn.textContent = 'Opening…';
 
       var note = mount.querySelector('#notecard');
+      var addr = Address.read();
 
       // Only ids and quantities are sent. The amount is computed server-side.
       fetch('/api/create-order', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ items: Cart.items(), note: note ? note.value : '' })
+        body: JSON.stringify({
+          items: Cart.items(),
+          note: note ? note.value : '',
+          address: addr
+        })
       })
         .then(function (r) {
           return r.json().then(function (d) {
@@ -325,6 +462,8 @@
             currency: order.currency,
             name:        OLIVE.config.brand,
             description: 'Hamper order',
+            // Saves the customer retyping what they just gave us.
+            prefill: { name: addr.name, email: addr.email, contact: addr.phone },
             theme:  { color: '#5C2233' },
             modal:  { ondismiss: idle },
             handler: function (resp) { confirmPayment(mount, resp, fail); }
@@ -394,8 +533,9 @@
         return;
       }
 
-      var sub = Cart.subtotal();
-      var ship = sub >= OLIVE.config.freeShipping ? 0 : 250;
+      var t = Cart.totals();
+      var sub = t.subtotal;
+      var ship = t.shipping;
 
       mount.innerHTML = '' +
         '<div class="cart-layout">' +
@@ -428,8 +568,48 @@
               (ship ? OLIVE.inr(ship) : 'Complimentary') + '</span></div>' +
             (ship ? '<p class="small" style="margin:0.5rem 0 0">Add ' +
               OLIVE.inr(OLIVE.config.freeShipping - sub) + ' for complimentary delivery.</p>' : '') +
+            /* Included, not added — it is already inside the subtotal above.
+               Labelled so, because a bare "GST" row reads as a line the total
+               is still waiting on. */
+            '<div class="summary-row"><span>GST (included)</span><span>' +
+              OLIVE.inr(t.gst) + '</span></div>' +
             '<div class="summary-row summary-total"><span>Total</span><span>' +
-              OLIVE.inr(sub + ship) + '</span></div>' +
+              OLIVE.inr(t.total) + '</span></div>' +
+            '<p class="tax-note">' + esc(OLIVE.config.taxNote) + '</p>' +
+
+            /* Delivery address. Without this a customer can pay in full and
+               leave us with no idea where the hamper goes — Razorpay collects
+               a phone and an email, never a postal address. */
+            '<div class="ship" data-ship>' +
+              '<span class="label" style="margin-bottom:0.2rem">Deliver to</span>' +
+              // Every field is required, so say it once rather than hanging an
+              // asterisk on all seven.
+              '<p class="small" style="margin:0 0 1rem">All fields are required.</p>' +
+              '<div class="field-row">' +
+                '<label class="field" for="s-name"><span>Recipient name</span>' +
+                  '<input type="text" id="s-name" name="ship-name" autocomplete="name" required></label>' +
+                '<label class="field" for="s-phone"><span>Recipient phone</span>' +
+                  '<input type="tel" id="s-phone" name="ship-phone" autocomplete="tel" ' +
+                    'inputmode="numeric" placeholder="10 digits" required></label>' +
+              '</div>' +
+              '<label class="field" for="s-addr"><span>Address</span>' +
+                '<textarea id="s-addr" name="ship-address" rows="2" ' +
+                  'placeholder="Flat or house number, building, street, area" required></textarea></label>' +
+              '<div class="field-row">' +
+                '<label class="field" for="s-city"><span>City</span>' +
+                  '<input type="text" id="s-city" name="ship-city" autocomplete="address-level2" required></label>' +
+                '<label class="field" for="s-state"><span>State</span>' +
+                  '<input type="text" id="s-state" name="ship-state" autocomplete="address-level1" required></label>' +
+              '</div>' +
+              '<div class="field-row">' +
+                '<label class="field" for="s-pin"><span>PIN code</span>' +
+                  '<input type="text" id="s-pin" name="ship-pin" autocomplete="postal-code" ' +
+                    'inputmode="numeric" maxlength="6" placeholder="6 digits" required></label>' +
+                '<label class="field" for="s-email"><span>Your email</span>' +
+                  '<input type="email" id="s-email" name="ship-email" autocomplete="email" required></label>' +
+              '</div>' +
+              '<p class="notes" data-ship-error hidden style="margin-top:0.25rem"></p>' +
+            '</div>' +
 
             '<label class="field" style="margin-top:1.5rem" for="notecard">' +
               '<span>Message for the note card</span>' +
@@ -454,11 +634,14 @@
           '</aside>' +
         '</div>';
 
+      initAddress(mount);
+
       // Checkout hands the composed order to WhatsApp.
       mount.querySelector('[data-checkout]').addEventListener('click', function (e) {
         e.preventDefault();
+        if (!requireAddress(mount)) { return; }
         var note = mount.querySelector('#notecard');
-        var text = Cart.summaryText();
+        var text = Cart.summaryText();   // carries the address once it is valid
         if (note && note.value) { text += '\n\nNote card: ' + note.value; }
         window.open(OLIVE.whatsappLink(text), '_blank', 'noopener');
       });
@@ -489,34 +672,6 @@
     document.addEventListener('cart:change', paint);
   }
 
-  /* ------------------------------------------------- guest-count shortcut */
-  /* Wedding favours are bought by headcount. This turns a guest number into
-     the right quantity and drops the visitor straight into the right band. */
-  function initGuestCount() {
-    var box = document.getElementById('guestcount');
-    if (!box) { return; }
-
-    var input = box.querySelector('[data-guests]');
-    var out = box.querySelector('[data-guestout]');
-    var slug = box.getAttribute('data-collection');
-    var hampers = OLIVE.hampersIn(slug);
-
-    function paint() {
-      var n = parseInt(input.value, 10);
-      if (!n || n < 1) { out.innerHTML = ''; return; }
-
-      out.innerHTML = hampers.map(function (h) {
-        var unit = OLIVE.priceAt(h, n);
-        return '<p style="margin-bottom:0.6rem"><a href="product.html?id=' + h.id + '&qty=' + n + '">' +
-               esc(h.name) + '</a> — ' + OLIVE.inr(unit) + ' each, ' +
-               '<strong>' + OLIVE.inr(unit * n) + '</strong> for ' + n + '.</p>';
-      }).join('');
-    }
-
-    input.addEventListener('input', paint);
-    paint();
-  }
-
   /* ---------------------------------------------------------------- boot */
   function boot() {
     renderCollections(document.getElementById('collections'));
@@ -524,15 +679,12 @@
     var grid = document.getElementById('hampers');
     if (grid) {
       var slug = grid.getAttribute('data-collection');
-      renderGrid(grid, slug ? OLIVE.hampersIn(slug) : OLIVE.hampers);
+      if (slug) { renderCollectionGrid(grid, slug); }
+      else { renderGrid(grid, OLIVE.hampers); }
     }
-
-    var j = document.getElementById('journal');
-    if (j) { renderJournal(j, parseInt(j.getAttribute('data-limit'), 10) || 0); }
 
     renderProduct();
     renderCart();
-    initGuestCount();
 
     // Bulk form: preselect the hamper the visitor came from.
     var pick = document.getElementById('bulk-hamper');

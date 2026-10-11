@@ -32,7 +32,7 @@ Decisions locked with the user:
 
 The reference copy reframed this. The Wedding collection is described as *"keepsakes to thank your guests"* — **favours, not a couple's gift**. An Indian wedding needs those in the hundreds. The site's lead collection is therefore inherently a volume product, and the design leans on that rather than treating bulk as an afterthought.
 
-1. **Wedding is sold by guest count, not by unit.** The collection page opens on a guest-count input — *"How many guests are you thanking?"* — which sets quantity and lands the visitor directly in the right price tier. Single-unit purchase remains available but is not the default framing.
+1. **Wedding is sold by guest count, not by unit.** ~~The collection page opens on a guest-count input.~~ Superseded: the calculator and the quantity bands behind it were both removed. Bulk is quoted on enquiry, so a published multiplication could only disagree with the quote. The framing survives in the copy; the arithmetic does not.
 2. **Tiered pricing on every hamper page** — 1–9 / 10–24 / 25–49 / 50+ / 100+, per-hamper price falling at each tier. Volume is visibly better value without a single "SALE" badge.
 3. **Cart tier nudge** — when a line sits below a boundary: *"Four more reaches the 10-hamper price — ₹340 less per hamper."*
 4. **"Enquire for 10+"** on every product, deep-linking to the bulk form with that hamper pre-selected.
@@ -167,15 +167,13 @@ product.html?id=…              Individual hamper page
 bulk.html                      Bulk & Corporate — the money page
 enquiry.html                   Consultation / contact
 about.html                     The Olive Branch story
-journal.html                   Gifting guides index
-journal-*.html                 3 seed articles
 cart.html                      Cart + checkout UI (payment stubbed)
 policies.html                  Shipping, returns, privacy, terms
 
 assets/
   css/olive.css                Single token-led stylesheet
-  js/data.js                   window.OLIVE = { config, collections, hampers, journal }
-  js/cart.js                   localStorage cart, INR formatting, tier logic
+  js/data.js                   window.OLIVE = { config, collections, hampers }
+  js/cart.js                   localStorage cart, INR formatting, address
   js/render.js                 Collection grid, product, cart renderers
   js/motion.js                 rAF scroll engine, parallax, The Multiplication
   js/site.js                   Nav, cart drawer, zoom, forms
@@ -204,7 +202,7 @@ Originals are **copied, never moved** — `Hamper Photos/` and `Collection Name 
 
 **Collections** — The three, each with its own voice line and full-bleed band.
 
-**Collection pages** — Grid with filtering (occasion, price band, size). Wedding opens on the guest-count input; Minis framed as the volume tier on Wedding and Corporate.
+**Collection pages** — Grid with filtering (occasion, price band, size). Celebration carries a named Diwali block; Wedding's guest-count input was removed with the quantity bands.
 
 **Product page** — Single large native-ratio photo with zoom; contents manifest bulleted with the leaf glyph; quantity stepper; **tiered pricing table**; Add to Cart and Buy Now; *Enquire for 10+*; personalised note-card option; dispatch notes; related hampers.
 
@@ -212,7 +210,7 @@ Originals are **copied, never moved** — `Hamper Photos/` and `Collection Name 
 
 **Cart** — Line items with quantity steppers, INR totals in Indian digit grouping (₹1,25,000), tier-upgrade nudges, note-card message, and a clearly stubbed payment step.
 
-**Journal** — Three seed guides (wedding favour planning by guest count, corporate gifting etiquette, choosing by occasion).
+**Journal** — Removed on 2026-10-10, to return when there is something to put in it. It was three seed guides and an index page; `data.js` carries a note saying what to restore.
 
 **Policies** — Shipping, returns, privacy, terms. Needed for trust now and required by payment gateways later.
 
@@ -241,7 +239,7 @@ No Node or Python is installed, so there is no local dev server by default.
 1. **Open `index.html` directly in a browser.** The architecture avoids `fetch()` and ES modules specifically so the full site — product pages and cart included — works over `file://`.
 2. **Better preview:** the VS Code **Live Server** extension, which needs no Node install.
 3. **Walkthrough:** home → collection → product → add two hampers → confirm totals, Indian digit grouping and the tier nudge → reload to confirm cart persistence → follow *Enquire for 10+* and confirm the bulk form pre-selects that hamper.
-4. **Bulk path:** on the Wedding collection page, enter a guest count of 150 and confirm it sets quantity and surfaces the correct tier price.
+4. **Bulk path:** on the Wedding collection page, confirm the enquiry line is the only route offered — there is no on-page calculator and no published band.
 5. **Motion:** scroll the home page and confirm parallax tracks smoothly, the oversized line drifts, and The Multiplication runs to 250 and resolves. Check no jank at 60fps and no horizontal scrollbar from the bleeding type.
 6. **WhatsApp:** click the float button on a product page and confirm the chat opens to +91 99202 84209 with that hamper named.
 7. **Zoom:** open, pan, close with Escape, and confirm focus returns to the trigger.

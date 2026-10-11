@@ -1,12 +1,15 @@
 # Netlify configuration.
 #
-# The site itself still has no build step — `publish = "."` serves the folder
-# exactly as it sits on disk. The only addition is the three payment
-# functions, which Netlify installs and runs for us.
+# The site still has no build step in the sense that matters: nothing is
+# compiled or bundled, and index.html opens straight from file:// with the
+# cart working. `tools/publish.sh` only copies the publishable files into
+# _site/, because the repository also holds 185MB of photographic masters and
+# the internal notes, and Netlify uploads a publish folder whole with no
+# exclude list. See the header of that script.
 
 [build]
-  publish  = "."
-  command  = ""
+  publish   = "_site"
+  command   = "bash tools/publish.sh"
   functions = "netlify/functions"
 
 # Friendlier URLs: /api/create-order instead of /.netlify/functions/create-order
@@ -15,8 +18,8 @@
   to     = "/.netlify/functions/:splat"
   status = 200
 
-# The originals and working documents are in the repo for safekeeping,
-# but there is no reason to publish 69MB of them to the web.
+# The originals and working documents stay in the repository for safekeeping;
+# tools/publish.sh is what keeps them off the web.
 [[headers]]
   for = "/assets/images/*"
   [headers.values]

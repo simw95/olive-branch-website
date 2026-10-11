@@ -34,9 +34,9 @@ There is no test suite. Verification is visual — see the bottom of this file.
 ## Where things live
 
 ```
-index.html, collection-*.html, product.html, ...   15 hand-written pages
+index.html, collection-*.html, product.html, ...   11 hand-written pages
 assets/css/olive.css      the entire design system, one file
-assets/js/data.js         ← business details, hampers, prices, journal
+assets/js/data.js         ← business details, hampers, prices
 assets/js/cart.js         cart in localStorage, with in-memory fallback
 assets/js/render.js       builds grids, product pages, the cart
 assets/js/motion.js       scroll reveals and parallax
@@ -46,8 +46,21 @@ Hamper Photos/            original PNG masters — never referenced at runtime
 docs/design-notes.md      the full design rationale
 ```
 
+**The label maker has moved out of this project.** It used to sit at
+`label/candle-label.html`; it now lives standalone in the `Label Maker` folder
+alongside this one. It was always collateral rather than a web page — nothing
+linked to it, it was `noindex`, and it sat outside the 15-page sweep.
+
+It is still styled to this brand: it copies the palette tokens from
+`assets/css/olive.css` and the leaf path from `assets/js/site.js`, so a rebrand
+here means re-checking it there. Its own README carries the warning that
+matters — the brand faces come off the Google Fonts CDN, so **exporting a label
+while offline silently prints it in Georgia and Arial**, which is how
+`assets/images/candles/pink-peony-label.svg` came to be set in Bodoni MT
+without anyone noticing.
+
 **`data.js` is the only file needed for content changes.** Prices, hamper
-names, contents, WhatsApp number, journal posts. Script load order matters:
+names, contents, WhatsApp number. Script load order matters:
 `data → cart → render → site → motion`. `render.js` must run before `site.js`
 so the zoom handler finds the images it injected.
 
@@ -74,6 +87,8 @@ trade-off is weaker per-hamper SEO, mitigated with JSON-LD.
 | Two `.section` blocks in a row | Stacked padding leaves a ~170px gap | Put `style="padding-bottom:0"` on the first, or alternate `section-alt` |
 | `hidden` attribute on a `.btn` | The UA's `[hidden]{display:none}` loses to `.btn{display:inline-flex}`, so the element stays visible | `[hidden]{display:none!important}` is already in section 1 — keep it |
 | Trusting any price sent from the browser | The cart total is client-side and trivially editable in dev tools | `create-order.js` recomputes every amount from `data.js`. Never accept an amount over the wire |
+| Adding a grid item to a grid whose others are auto-placed | Auto-placement fills in *around* explicitly-placed items. Pinning a zoom panel to row 1 / column 2 of `.product` pushed `.product-buy` out to row 2 — the buy panel visibly dropped down the page on hover | Place every child explicitly, or none. Scope it to the breakpoint where the extra column exists |
+| `mousemove` for panning anything | Phones never fire it. The zoom overlay opened a hugely magnified crop that a touch visitor could not move at all | `pointermove` covers mouse, touch and pen; add `touch-action: none` or the browser keeps the gesture |
 
 ---
 
@@ -88,6 +103,17 @@ trade-off is weaker per-hamper SEO, mitigated with JSON-LD.
 - **Zero border-radius.** The site is square throughout.
 - Colour comes from the photography. The palette has seven tokens and each has
   exactly one job — see `olive.css` section 1.
+- **Never promise multi-address dispatch, a number of addresses, or "no extra
+  handling cost".** That claim was removed from the corporate page, the bulk
+  form, the product pricing note, the two meta descriptions and a hamper's
+  notes. Dispatch to many individual recipients is the part of a bulk order
+  that is hardest to honour, so the site does not commit to it in copy —
+  it is discussed on the enquiry.
+- **Don't commit to sending a sample box, and don't offer one as a call to
+  action.** The two "Request a sample box" links were removed and the copy
+  reframed around approval — "Sample boxes are to be approved before you commit
+  to a full run", not "we send a sample". Same reasoning as above: it is a
+  promise made before we know the order.
 
 Type is **EB Garamond** (display, wordmark) over **Schibsted Grotesk** (body,
 UI). The wordmark is set in capitals with wide tracking to match the box lids.
@@ -105,23 +131,134 @@ UI). The wordmark is set in capitals with wide tracking to match the box lids.
   processed in `assets/images/bridesmaid/` and `data.js` holds a commented-out
   collection block and two hampers. Uncomment both plus a
   `collection-bridesmaid.html` to switch it back on.
-- **Quantity bands are per hamper type, not pooled** across the cart. Ten Minis
-  earn the band; five Minis plus five full hampers do not.
+- **GST is inclusive, and it is extracted rather than added.** Every `price`
+  in `data.js` is the figure the customer pays. `OLIVE.orderTotals()` — still
+  the single place delivery, GST and the total are worked out, called by both
+  the cart and `create-order.js` — adds **delivery only**. It divides by
+  `1 + gstRate` to report the tax already inside the subtotal, and that figure
+  is deliberately *not* part of the sum; adding it back charges the tax twice,
+  which is the one way this can go wrong. The cart labels the line **GST
+  (included)** for the same reason. `OLIVE.config.taxNote` reads "Inclusive
+  of 18% GST." and is **built from `gstRate`, not typed** — the rate is now
+  printed under every price, so a literal would go on saying 18% after
+  someone changed the rate.
+  **Changing `gstRate` changes what the invoice splits out, not what anyone is
+  charged.** To change what is charged, change the prices.
+  This has now gone both ways. The site quoted inclusive with no arithmetic,
+  then spent a week quoting before-tax and adding 18% at checkout — on the
+  reasoning that a card payment has to collect the invoice total — and is now
+  inclusive again, with the arithmetic kept so the component can still be
+  shown. If you find copy saying "Plus GST" or "before GST", it is a leftover
+  from that week. The GSTIN is still held and still never rendered.
+- **The hero moves on load, and keeps breathing.** `@keyframes hero-drop`
+  lowers the photograph into its frame — the sprig and wordmark are baked into
+  the JPEG, so dropping the image is what makes them glide down — and the copy
+  follows on a stagger via `.hero-body > *:nth-child(n)`. Then `hero-breathe`
+  scales 1 → 1.045 over 26s, alternating forever, so the hero is never fully
+  still. **The overscan invariant matters:** the drop travels 4% while scale
+  1.10 hides 5%, and both hit zero together, so no strip of backing colour is
+  ever exposed. Raise the travel or lower the scale and you reintroduce the
+  parallax bug this image already had. `hero-breathe` never goes below scale 1
+  for the same reason. Both are switched off outright under reduced motion —
+  zeroing duration alone would leave the stagger delays holding the copy
+  invisible.
+- **The product zoom magnifies in place, and 1.5× is a ceiling with a reason.**
+  Hovering scales the photograph inside `.product-media`, which clips; the
+  `transform-origin` follows the cursor. On touch, and below 1025px, tapping
+  opens the overlay at the same 1.5× (and never past the source's own pixels).
+  `MAX_ZOOM` in `site.js` governs both.
+  **Do not raise it.** It used to magnify 2.46× — the source at native 1800px
+  over a ~730px column — which is enough to read 8px fine print. Photography
+  now comes through generative editing, which holds large type and reliably
+  mangles small type: one edited hamper read *50 GMS* where the soap says 55,
+  and *COFFEE BEANS* where the tin says *coffee powder added 15%*. At page
+  size none of that is legible; at 2.46× all of it was. 1.5× shows texture and
+  arrangement and leaves print a smudge.
+  Scaling about an origin inside the box also means **no clamping is needed**:
+  at any scale ≥ 1 the result still covers the frame, wherever the origin sits,
+  so the blank-edge bug the old side panel had to guard against cannot occur.
+  Measure `.product-media`, never the image — once scaled, the image's own rect
+  reports the scaled box and the sums feed back on themselves.
 - **No zoom on the home or collection pages**, only on product pages.
+- **A delivery address is required by both checkout routes, and that is new.**
+  Neither route asked for one before: Razorpay hands over a payer's phone and
+  email and never a postal address, and the WhatsApp handover only listed the
+  hampers. An order could be paid in full with nobody knowing where the box
+  went. `Address` in `cart.js` holds it, persisted under `olive-address-v1`
+  with the same storage guards as the cart, and both routes call
+  `requireAddress()` before they proceed. `create-order.js` re-checks it
+  server-side, because the browser check only stops honest mistakes.
+  The address rides to the webhook inside the Razorpay order **notes** — which
+  is how it survives without a database.
+- **`razorpay-webhook.js` is the real order record, not `verify-payment.js`.**
+  Verify only runs if the customer's browser calls back; close the tab at the
+  wrong moment and the money is taken while the site hears nothing. Razorpay
+  retries the webhook until it gets a 2xx, so that is what triggers the
+  confirmation email. **Its signature is a different one** — HMAC of the raw
+  body with `RAZORPAY_WEBHOOK_SECRET`, not HMAC of `order_id|payment_id` with
+  the key secret. Sign the body exactly as received; parsing and
+  re-serialising reorders keys and the signature stops matching.
+  It returns 200 even when the email fails, so a mail outage cannot start a
+  retry storm against an order that is already good.
+- **The GSTIN is held but never displayed.** `OLIVE.config.gstin` carries the
+  real number and nothing renders it. It used to print in every page footer;
+  that was removed deliberately — a GSTIN belongs on an invoice, not on
+  every page of a gift shop. Don't put it back on the storefront, and don't
+  delete the value either: the invoice will want it.
+- **Order email is optional, like the payment keys.** `_email.js` posts to
+  Resend over plain `fetch` — no npm, matching the other functions. Without
+  `RESEND_API_KEY` and `ORDER_EMAIL_FROM` it logs and returns; nothing breaks.
+- **A hamper can sit in more than one collection, and a collection can carry
+  named sections.** Three optional fields on a hamper in `data.js` do this:
+  `alsoIn: ['celebration']` lists further collections it is shown in, so The
+  Grand Edit is **one entry** sold as both a corporate and a celebration
+  hamper — edit it once and both pages change. `section: 'Diwali'` puts it in
+  its own block on the collection page, which `OLIVE.sectionsIn()` builds and
+  the nav links straight to by anchor. `gallery: [a, b]` gives the product page
+  more than one photograph: The Little Indulgence is shown open and wrapped.
+  All three are optional, and a hamper with none of them behaves exactly as
+  every hamper did before. The section heading lives in `SECTION_HEADINGS` in
+  `render.js`, not in `data.js`, so a new section needs only its name there.
+- **Swapping a product photograph keeps the same `<img>` element.** The view
+  buttons change `src` and `data-zoom` on the element already on the page
+  rather than replacing it. `site.js` bound the magnifier to that element once
+  and reads `data-zoom` at click time, so the zoom follows the swap. Replace
+  the element and the magnifier silently stops working on the second view.
+- **There are no quantity bands any more.** Every hamper carries one `price`,
+  whatever the quantity. Five bands used to print as a table on every product
+  page, with a "9 more reaches ₹7,990 each" nudge beside the quantity box;
+  `OLIVE.tiers`, `tierIndex()` and `nextTier()` are gone with them, and
+  `OLIVE.priceAt(hamper)` now takes one argument. Bulk is quoted on enquiry —
+  the product page and `bulk.html` both carry a WhatsApp line instead of a
+  table. Don't reintroduce a published table: what moves the figure is the
+  hampers chosen, the branding and the number of addresses, and a table can
+  price none of those.
 
 ---
 
-## The photography is placeholder
+## The photography is part placeholder
 
-All current images are AI-generated and will be replaced by real photography.
-Two known issues that disappear when they are:
+**Every hamper on the three live collections has been reshot**, in three
+batches: corporate and celebration in October, wedding after them. Those boxes
+are branded "The Olive Branch" and the contents lists in `data.js` are read off
+the photographs themselves. The frames they replaced are kept, not deleted —
+`assets/images/*/retired/` — because the copy that cited them is easier to
+check against the picture it was written from.
 
-1. Several product labels contain garbled text.
-2. Most boxes are branded **"The Olive Project"** — the old name. Only the
-   hero, the wedding Mini and the band above Weddings say "The Olive Branch".
+What is still placeholder: the hero and the section imagery, and the
+parked Bridesmaid set. Two issues go with it, and both disappear when real
+photography arrives:
+
+1. Several product labels contain garbled text. The new photography is no
+   exception — read any label at magnification before quoting it, and leave
+   out what cannot be made out rather than guessing. This is why `MAX_ZOOM`
+   is 1.5 and why a brand mark that came out as "B8JEE" is described as
+   "almond butter" instead.
+2. The older boxes are branded **"The Olive Project"** — the old name.
 
 Replacements should keep the same filenames in `assets/images/`; nothing else
-needs to change. Originals stay untouched in `Hamper Photos/`.
+needs to change. Originals stay untouched in `Hamper Photos/`, and the
+supplied masters in `Final upload/`.
 
 ---
 
@@ -152,7 +289,7 @@ Gotchas when doing this:
 
 **Always run the overflow sweep after layout changes.** Inject a script that
 compares `scrollWidth` to `clientWidth` at 500 / 760 / 1100 / 1500px across all
-15 pages. It has caught two real bugs that were invisible in screenshots.
+11 pages. It has caught two real bugs that were invisible in screenshots.
 
 Also check: `prefers-reduced-motion` renders every animated element at its
 finished state (it is a hard off switch, not a reduction), and the cart
