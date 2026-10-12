@@ -57,18 +57,13 @@
   <!-- Opens from a slim horizontal slit while the frame settles back from a
        slow push-in, then parallaxes as it scrolls. -->
   <section class="bleed bleed-16 par wipe bleed-zoom">
-    <!-- The wording is part of the photograph rather than markup, so it has to
-         be in the alt text or it is invisible to a screen reader and to search.
-         Two frames of the scene: the wide one for the 16:7 band, and a near
-         square one with the words repositioned for the 4:3 band below 860px.
-         A single wide file cannot serve both — the band crops to the middle
-         60% of the width down there, which is where the words are. -->
-    <div class="bleed-media">
-      <picture>
-        <source media="(max-width: 860px)" srcset="assets/images/home-band-mobile.jpg">
-        <img src="assets/images/home-band-full.jpg" alt="An open Olive Branch gift box holding a black fig candle, raw honey, Honest artisan chocolate and Californian almonds, beside a ribboned box and a sprig of olive, with the words “Thoughtful gifts, beautifully curated — timeless hampers for life’s most meaningful moments.”" loading="lazy">
-      </picture>
-    </div>
+    <!-- One frame at both widths. The scene is near square, so the 16:7 band
+         takes its middle and the 4:3 band takes nearly all of it — the wording
+         survives either way, which is what the two-crop <picture> here used to
+         be working around. The wording is part of the photograph rather than
+         markup, so it has to be in the alt text or it is invisible to a screen
+         reader and to search. -->
+    <div class="bleed-media"><img src="assets/images/home-band.jpg" alt="An open Olive Branch gift box holding a black fig candle, raw honey, Honest artisan chocolate and Californian almonds, beside a ribboned box and a sprig of olive, with the words “Thoughtful gifts, beautifully curated — timeless hampers for life’s most meaningful moments.”" loading="lazy"></div>
   </section>
 
   <section class="section centred">
