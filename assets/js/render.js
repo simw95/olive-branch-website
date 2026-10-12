@@ -568,14 +568,19 @@
               (ship ? OLIVE.inr(ship) : 'Complimentary') + '</span></div>' +
             (ship ? '<p class="small" style="margin:0.5rem 0 0">Add ' +
               OLIVE.inr(OLIVE.config.freeShipping - sub) + ' for complimentary delivery.</p>' : '') +
-            /* Included, not added — it is already inside the subtotal above.
-               Labelled so, because a bare "GST" row reads as a line the total
-               is still waiting on. */
-            '<div class="summary-row"><span>GST (included)</span><span>' +
+            /* Added, not contained: prices are entered before tax, so this
+               row is a line the total is still waiting on and a bare "GST" is
+               exactly right. If prices ever go inclusive again this has to say
+               so, or the customer reads the total as 18% short. */
+            '<div class="summary-row"><span>GST</span><span>' +
               OLIVE.inr(t.gst) + '</span></div>' +
             '<div class="summary-row summary-total"><span>Total</span><span>' +
               OLIVE.inr(t.total) + '</span></div>' +
-            '<p class="tax-note">' + esc(OLIVE.config.taxNote) + '</p>' +
+            /* `taxNote` belongs under a PRICE, where it says what the figure
+               does not yet contain. It cannot go under this total, which has
+               the GST row above it added in — "Exclusive of GST" there would
+               be plainly false. The itemised row says everything needed. */
+            '<p class="tax-note">GST is itemised above and shown on the invoice.</p>' +
 
             /* Delivery address. Without this a customer can pay in full and
                leave us with no idea where the hamper goes — Razorpay collects

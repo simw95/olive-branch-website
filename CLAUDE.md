@@ -131,25 +131,30 @@ UI). The wordmark is set in capitals with wide tracking to match the box lids.
   processed in `assets/images/bridesmaid/` and `data.js` holds a commented-out
   collection block and two hampers. Uncomment both plus a
   `collection-bridesmaid.html` to switch it back on.
-- **GST is inclusive, and it is extracted rather than added.** Every `price`
-  in `data.js` is the figure the customer pays. `OLIVE.orderTotals()` — still
+- **GST is exclusive: prices are before tax and 18% is added at checkout.**
+  Every `price` in `data.js` is the pre-tax figure. `OLIVE.orderTotals()` —
   the single place delivery, GST and the total are worked out, called by both
-  the cart and `create-order.js` — adds **delivery only**. It divides by
-  `1 + gstRate` to report the tax already inside the subtotal, and that figure
-  is deliberately *not* part of the sum; adding it back charges the tax twice,
-  which is the one way this can go wrong. The cart labels the line **GST
-  (included)** for the same reason. `OLIVE.config.taxNote` reads "Inclusive
-  of 18% GST." and is **built from `gstRate`, not typed** — the rate is now
-  printed under every price, so a literal would go on saying 18% after
-  someone changed the rate.
-  **Changing `gstRate` changes what the invoice splits out, not what anyone is
-  charged.** To change what is charged, change the prices.
-  This has now gone both ways. The site quoted inclusive with no arithmetic,
-  then spent a week quoting before-tax and adding 18% at checkout — on the
-  reasoning that a card payment has to collect the invoice total — and is now
-  inclusive again, with the arithmetic kept so the component can still be
-  shown. If you find copy saying "Plus GST" or "before GST", it is a leftover
-  from that week. The GSTIN is still held and still never rendered.
+  the cart and `create-order.js` — multiplies the subtotal by `gstRate`, adds
+  that to the sum, then adds delivery after it, untaxed. A hamper listed at
+  3,450 is charged at 4,071, or 4,321 under the free-delivery threshold.
+  `OLIVE.config.taxNote` reads "Exclusive of GST" and is a plain string: it
+  names no rate, so there is nothing to keep in step with `gstRate`.
+  **Changing `gstRate` changes what every customer is charged.**
+
+  **This has flipped four times, so check which way round it is before
+  touching anything.** Inclusive with no arithmetic → exclusive → inclusive
+  with the tax extracted → exclusive again. Two things have to agree and are
+  the whole risk:
+
+  1. `gst` is **part of `total`** when prices are exclusive, and **not part
+     of it** when they are inclusive.
+  2. The cart's row label says which — a bare **GST** when it is being added,
+     **GST (included)** when it is not.
+
+  Get those out of step and the customer is charged the tax twice or not at
+  all, and `cart-math.js` is written to catch exactly that. If you find copy
+  saying "Inclusive of GST" or "GST (included)", it is a leftover from the
+  previous arrangement. The GSTIN is still held and still never rendered.
 - **The hero moves on load, and keeps breathing.** `@keyframes hero-drop`
   lowers the photograph into its frame — the sprig and wordmark are baked into
   the JPEG, so dropping the image is what makes them glide down — and the copy

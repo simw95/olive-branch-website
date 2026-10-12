@@ -83,10 +83,10 @@ exports.handler = async function (event) {
     summary.push(hamper.name + ' x' + qty);
   }
 
-  /* Delivery and the total come from the same helper the cart renders from,
-     so the figure charged is the figure shown. Prices in data.js are
-     GST-inclusive: orderTotals adds delivery only, and reports the tax
-     already inside the subtotal rather than adding any. */
+  /* GST, delivery and the total come from the same helper the cart renders
+     from, so the figure charged is the figure shown. Prices in data.js are
+     entered before tax; orderTotals adds GST on the hampers and delivery
+     after it, untaxed. */
   var totals = OLIVE.orderTotals(subtotal);
   var amount = Math.round(totals.total * 100);   // Razorpay uses paise
 

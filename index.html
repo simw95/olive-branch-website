@@ -57,7 +57,17 @@
   <!-- Opens from a slim horizontal slit while the frame settles back from a
        slow push-in, then parallaxes as it scrolls. -->
   <section class="bleed bleed-16 par wipe bleed-zoom">
-    <div class="bleed-media"><img src="assets/images/hamper-band.jpg" alt="An open Olive Branch gift box holding a black fig candle, raw honey, artisan chocolate and Californian almonds, beside a ribboned gift box and a fresh olive branch." loading="lazy"></div>
+    <!-- The wording is part of the photograph rather than markup, so it has to
+         be in the alt text or it is invisible to a screen reader and to search.
+         It also sits in the right third of the frame, which the band crops away
+         below 860px — so the phone crop leaves the words out entirely rather
+         than slicing them mid-word. -->
+    <div class="bleed-media">
+      <picture>
+        <source media="(max-width: 860px)" srcset="assets/images/home-band-mobile.jpg">
+        <img src="assets/images/home-band-full.jpg" alt="An open Olive Branch gift box holding a black fig candle, raw honey, Honest artisan chocolate and Californian almonds, beside a ribboned box and a sprig of olive, with the words “Thoughtful gifts, beautifully curated — timeless hampers for life’s most meaningful moments.”" loading="lazy">
+      </picture>
+    </div>
   </section>
 
   <section class="section centred">

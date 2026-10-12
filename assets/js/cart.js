@@ -114,7 +114,7 @@
       out.push('');
       out.push('Subtotal: ' + OLIVE.inr(t.subtotal));
       out.push('Delivery: ' + (t.shipping ? OLIVE.inr(t.shipping) : 'Complimentary'));
-      out.push('GST (included): ' + OLIVE.inr(t.gst));
+      out.push('GST: ' + OLIVE.inr(t.gst));
       out.push('Total: ' + OLIVE.inr(t.total));
 
       var a = Address.read();

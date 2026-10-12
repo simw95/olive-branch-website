@@ -37,13 +37,13 @@ OLIVE.config = {
   freeShipping: 5000,
   shipping:     250,                         // charged below freeShipping
 
-  /* Every `price` below is the figure the customer pays, GST included. The
-     cart and create-order.js both take it as it stands and add only delivery;
-     `gstRate` is used to work backwards to the tax component for the cart
-     line and the invoice, never to add anything on.
+  /* Every `price` below is the figure BEFORE tax. GST is added on top by
+     orderTotals(), which both the cart and create-order.js go through, so a
+     hamper listed at 3,450 is charged at 4,071 plus delivery.
 
-     Changing `gstRate` therefore changes what the invoice splits out, not
-     what anyone is charged. To change what is charged, change the prices. */
+     Changing `gstRate` therefore changes what every customer is charged.
+     That is the opposite of how this behaved while prices were inclusive —
+     see the note on orderTotals. */
   gstRate: 0.18,
 
   heroImage:    'assets/images/hero.jpg',
@@ -61,10 +61,9 @@ OLIVE.config = {
    -------------------------------------------------------------------------- */
 
 /* Printed under every price, on the product page and under the cart total.
-   Built from `gstRate` rather than written out, so the rate shown and the
-   rate the invoice splits out cannot disagree. */
-OLIVE.config.taxNote = 'Inclusive of ' +
-  +(OLIVE.config.gstRate * 100).toFixed(2) + '% GST.';
+   A literal again: the note no longer names a rate, so there is nothing for
+   it to derive from and nothing that can fall out of step with `gstRate`. */
+OLIVE.config.taxNote = 'Exclusive of GST';
 
 /* --------------------------------------------------------------------------
    3. COLLECTIONS
@@ -137,7 +136,7 @@ OLIVE.hampers = [
     collection: 'wedding',
     size: 'Full',
     occasions: ['Wedding', 'Thank you', 'Family'],
-    price: 4500,
+    price: 3850,
     image: 'assets/images/wedding/wedding-table-card.jpg',
     imageFull: 'assets/images/wedding/wedding-table-full.jpg',
     ratio: 1536 / 1024,
@@ -151,7 +150,7 @@ OLIVE.hampers = [
       'The Cowboy’s Farm quinoa chips',
       'Three handcrafted goat’s milk soaps — calendula, grapefruit and jasmine — in a wooden tray',
       'Gourmet mixed nuts in a drawstring pouch',
-      'Davidoff cappuccino chewing coffee candy',
+      'Davidoff cappuccino chewing coffee candy, 50 g',
       'Boojee Almond butter, 250 g, with a wooden swirler',
       'Amber scented candle, 210 g',
       'Magnetic lid sturdy box'
@@ -164,7 +163,7 @@ OLIVE.hampers = [
     collection: 'wedding',
     size: 'Full',
     occasions: ['Wedding', 'Thank you', 'Favours'],
-    price: 3300,
+    price: 2850,
     image: 'assets/images/wedding/evergreen-card.jpg',
     imageFull: 'assets/images/wedding/evergreen-full.jpg',
     ratio: 1536 / 1024,
@@ -172,7 +171,7 @@ OLIVE.hampers = [
     lede: 'Coffee, honey, tree-to-bar chocolate and a hand-poured candle, in the olive box.',
     description: 'Six things, and every one of them gets used. Coffee for the week after, honey for the toast, a bar worth saving for the evening, and a scented candle for the end of it. It is the thank-you to send the guests who are neither family nor a place setting — the fifty or so people you would have called anyway.',
     contents: [
-      'Davidoff Rich Aroma instant coffee',
+      'Davidoff Rich Aroma instant coffee, 100 g',
       'Mixed gourmet nuts in a glass jar',
       'Bon-fiction The Cranberry Chilli Chase, 64% dark chocolate with cranberry, chilli and sea salt',
       'Beelicious raw Kashmir honey with a wooden swirler',
@@ -188,7 +187,7 @@ OLIVE.hampers = [
     collection: 'wedding',
     size: 'Mini',
     occasions: ['Wedding', 'Favours', 'Thank you'],
-    price: 3850,
+    price: 3350,
     image: 'assets/images/wedding/something-blue-card.jpg',
     imageFull: 'assets/images/wedding/something-blue-full.jpg',
     ratio: 1536 / 1024,
@@ -212,7 +211,7 @@ OLIVE.hampers = [
     collection: 'wedding',
     size: 'Full',
     occasions: ['Wedding', 'Favours', 'Mithai', 'Thank you'],
-    price: 2750,
+    price: 2450,
     image: 'assets/images/wedding/peacock-box-card.jpg',
     imageFull: 'assets/images/wedding/peacock-box-full.jpg',
     /* Two views: the trays open, and the same box with its printed lids on,
@@ -240,7 +239,7 @@ OLIVE.hampers = [
     collection: 'wedding',
     size: 'Full',
     occasions: ['Wedding', 'Favours', 'Thank you', 'Engagement'],
-    price: 4000,
+    price: 3450,
     image: 'assets/images/wedding/blush-box-card.jpg',
     imageFull: 'assets/images/wedding/blush-box-full.jpg',
     ratio: 1536 / 1024,
@@ -266,7 +265,7 @@ OLIVE.hampers = [
     collection: 'celebration',
     size: 'Full',
     occasions: ['Housewarming', 'Thank you', 'New home', 'Birthday'],
-    price: 2700,
+    price: 2350,
     image: 'assets/images/celebration/breakfast-basket-card.jpg',
     imageFull: 'assets/images/celebration/breakfast-basket-full.jpg',
     ratio: 1536 / 1024,
@@ -288,7 +287,7 @@ OLIVE.hampers = [
     collection: 'celebration',
     size: 'Full',
     occasions: ['Birthday', 'Thank you', 'Diwali', 'Just because'],
-    price: 2750,
+    price: 2350,
     image: 'assets/images/celebration/little-basket-card.jpg',
     imageFull: 'assets/images/celebration/little-basket-full.jpg',
     /* Two views: the basket open, and the same basket wrapped in organza as it
@@ -304,7 +303,7 @@ OLIVE.hampers = [
     contents: [
       'Nutella biscuits',
       'Bon-fiction The Mango Menace, 55% dark chocolate with Alphonso mango and chilli',
-      'Davidoff Crema Intense coffee',
+      'Davidoff Crema Intense chewing coffee candy, 50 g',
       'Beelicious honey with a wooden swirler',
       'Wicker and cane basket'
     ],
@@ -316,7 +315,7 @@ OLIVE.hampers = [
     collection: 'celebration',
     size: 'Full',
     occasions: ['Birthday', 'Thank you', 'New home', 'Get well'],
-    price: 3200,
+    price: 2750,
     image: 'assets/images/celebration/slow-morning-card.jpg',
     imageFull: 'assets/images/celebration/slow-morning-full.jpg',
     ratio: 1536 / 1024,
@@ -324,7 +323,7 @@ OLIVE.hampers = [
     lede: 'Coffee, honey, chocolate and a hand-poured candle, with a calendula goat’s milk soap on a wooden dish.',
     description: 'An hour rather than an occasion. Coffee worth grinding the morning around, honey for the toast, a bar to break into in the evening, and a scented candle for the end of it. The soap arrives on its own wooden dish, which is the detail people remember.',
     contents: [
-      'Davidoff Rich Aroma instant coffee',
+      'Davidoff Rich Aroma instant coffee, 100 g',
       'Calendula goat’s milk soap, 115 g, on a wooden dish',
       'Bon-fiction The Cranberry Chilli Chase, 64% dark chocolate with cranberry, chilli and sea salt',
       'Nutella hazelnut spread',
@@ -345,7 +344,7 @@ OLIVE.hampers = [
     section: 'Diwali',
     size: 'Full',
     occasions: ['Diwali', 'Client gifting', 'Thank you'],
-    price: 3600,
+    price: 3200,
     image: 'assets/images/celebration/diya-box-card.jpg',
     imageFull: 'assets/images/celebration/diya-box-full.jpg',
     ratio: 1536 / 1024,
@@ -369,7 +368,7 @@ OLIVE.hampers = [
     section: 'Diwali',
     size: 'Full',
     occasions: ['Diwali', 'Housewarming', 'Blessing'],
-    price: 2800,
+    price: 2450,
     image: 'assets/images/celebration/puja-box-card.jpg',
     imageFull: 'assets/images/celebration/puja-box-full.jpg',
     ratio: 1536 / 1024,
@@ -394,7 +393,7 @@ OLIVE.hampers = [
     section: 'Diwali',
     size: 'Full',
     occasions: ['Diwali', 'Client gifting', 'Thank you', 'Host gift'],
-    price: 3400,
+    price: 3000,
     image: 'assets/images/celebration/card-table-card.jpg',
     imageFull: 'assets/images/celebration/card-table-full.jpg',
     ratio: 1536 / 1024,
@@ -405,7 +404,7 @@ OLIVE.hampers = [
       'Gourmet cashews, 300 g',
       'Gourmet almonds, 300 g',
       'Gourmet pistachios, 300 g',
-      'Davidoff Fine Aroma instant coffee',
+      'Davidoff Fine Aroma instant coffee, 100 g',
       'Davidoff mocha chewing coffee candy, 50 g',
       'Hand-poured candle in a hammered brass vessel',
       'Magnetic lid sturdy box'
@@ -424,7 +423,7 @@ OLIVE.hampers = [
     collection: 'corporate',
     size: 'Mini',
     occasions: ['Client gifting', 'Onboarding', 'Team', 'Diwali'],
-    price: 1800,
+    price: 1500,
     image: 'assets/images/corporate/desk-press-card.jpg',
     imageFull: 'assets/images/corporate/desk-press-full.jpg',
     ratio: 1536 / 1024,
@@ -446,7 +445,7 @@ OLIVE.hampers = [
     collection: 'corporate',
     size: 'Full',
     occasions: ['Diwali', 'Client gifting', 'Onboarding', 'Team'],
-    price: 3850,
+    price: 3450,
     image: 'assets/images/corporate/signature-box-card.jpg',
     imageFull: 'assets/images/corporate/signature-box-full.jpg',
     ratio: 1536 / 1024,
@@ -473,7 +472,7 @@ OLIVE.hampers = [
     alsoIn: ['celebration'],
     size: 'Full',
     occasions: ['Diwali', 'Client gifting', 'Thank you', 'Team'],
-    price: 5000,
+    price: 4250,
     image: 'assets/images/corporate/grand-edit-card.jpg',
     imageFull: 'assets/images/corporate/grand-edit-full.jpg',
     ratio: 1536 / 1024,
@@ -484,7 +483,7 @@ OLIVE.hampers = [
       'Bon-fiction The Mango Menace, 55% dark chocolate with Alphonso mango and chilli',
       'La Folie dark chocolate sea salt cookie',
       'Manam milk chocolate',
-      'Davidoff mocha coffee',
+      'Davidoff mocha chewing coffee candy, 50 g',
       'Lotus Biscoff smooth spread',
       'Bombay Sweet Shop Bombay bhel chikki',
       'Gourmet mixed nuts in a glass jar',
@@ -499,7 +498,7 @@ OLIVE.hampers = [
     collection: 'corporate',
     size: 'Full',
     occasions: ['Diwali', 'Client gifting', 'Milestone', 'Thank you'],
-    price: 6400,
+    price: 5400,
     image: 'assets/images/corporate/executive-case-card.jpg',
     imageFull: 'assets/images/corporate/executive-case-full.jpg',
     ratio: 1536 / 1024,
@@ -598,22 +597,26 @@ OLIVE.inr = function (n) {
    from it and create-order.js charges from it, so the figure taken can never
    disagree with the figure shown.
 
-   Prices in `prices` are GST-inclusive, so GST is **extracted, not added**:
-   a hamper listed at 3,400 is charged at 3,400 and carries 518 of tax inside
-   that figure. `gst` is reported so the cart and the invoice can show the
-   component, and it is deliberately NOT part of the sum — adding it would
-   charge the tax twice. Delivery is added to the listed price as it stands.
+   Prices in `prices` are entered BEFORE tax, so GST is **added, not
+   extracted**: a hamper listed at 3,450 carries 621 of tax and is charged at
+   4,071, plus delivery if the subtotal is under the free-delivery threshold.
 
-   This reverses the arrangement that stood for one week in October, where
-   prices were entered before tax and 18% was added at checkout. */
+   GST falls on the hampers only — delivery is added after it, untaxed.
+
+   This has now gone both ways twice. Inclusive with no arithmetic, then
+   exclusive, then inclusive with the tax extracted, and now exclusive again.
+   The one thing that must stay true through any of it: `gst` is part of
+   `total` when prices are exclusive and is NOT when they are inclusive, and
+   the cart's label has to say which. Get those two out of step and the
+   customer is either charged the tax twice or not at all. */
 OLIVE.orderTotals = function (subtotal) {
   var shipping = subtotal >= OLIVE.config.freeShipping ? 0 : OLIVE.config.shipping;
-  var net = Math.round(subtotal / (1 + OLIVE.config.gstRate));
+  var gst = Math.round(subtotal * OLIVE.config.gstRate);
   return {
     subtotal: subtotal,
-    gst:      subtotal - net,          // the tax already inside the subtotal
+    gst:      gst,                     // added on top, not contained within
     shipping: shipping,
-    total:    subtotal + shipping
+    total:    subtotal + gst + shipping
   };
 };
 
