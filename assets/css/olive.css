@@ -491,6 +491,8 @@ a { color: inherit; }
    the image and the sizing above never reaches the <img>. `contents` removes
    the wrapper from layout and leaves the image as the direct child. */
 .bleed-media picture { display: contents; }
+/* Same reason, for the burgundy band's single photograph. */
+.scale-media picture { display: contents; }
 /* No min-height here: combined with aspect-ratio it transfers into a
    *minimum width* (320 × 16/7 = 731px) and overflows narrow viewports.
    The ratio is stepped responsively instead. */

@@ -87,8 +87,14 @@
       <div class="tick"></div>
       <p class="measure-narrow" style="margin-inline:auto">Luxury isn’t defined by making one beautiful gift. It’s defined by making every gift equally beautiful. Every Olive Branch collection is assembled with meticulous care, ensuring the same thoughtful experience from the first hamper to the last.</p>
 
+      <!-- Two crops, because this frame is 2:1 above 620px and 4:3 below it.
+           Unlike the bleed bands there is no overscan here, so each file is cut
+           to the exact ratio and nothing further is trimmed. -->
       <div class="scale-media">
-        <img src="assets/images/corporate/grand-edit-full.jpg" alt="The Festive Collection, a cane basket with leather handles filled with chocolate, coffee, chikki, a spread and gourmet nuts." loading="lazy">
+        <picture>
+          <source media="(max-width: 620px)" srcset="assets/images/scale-band-mobile.jpg">
+          <img src="assets/images/scale-band.jpg" alt="Two dozen Olive Branch hampers stacked and open across a table — olive, burgundy and bone boxes, cane baskets, ribboned lids and gift tags — the same hamper composed over and over." loading="lazy">
+        </picture>
       </div>
 
       <p class="small" style="margin-top:1.75rem">Fifty hampers, or five hundred. The last one is composed exactly like the first.</p>
