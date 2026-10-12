@@ -62,7 +62,7 @@ link and the announcement bar text. Items marked `TODO` still need real values.
 | Item | Where |
 |---|---|
 | Real email address | `OLIVE.config.email` |
-| GSTIN | `OLIVE.config.gstin` |
+| GSTIN | A Netlify environment variable, when the invoice needs it — never in `data.js`, which the browser downloads |
 | Instagram handle | `OLIVE.config.instagram` |
 | City, if not Mumbai | `OLIVE.config.city` |
 | Real hamper names and prices | `OLIVE.hampers` |

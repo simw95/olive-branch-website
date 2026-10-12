@@ -205,11 +205,15 @@ UI). The wordmark is set in capitals with wide tracking to match the box lids.
   re-serialising reorders keys and the signature stops matching.
   It returns 200 even when the email fails, so a mail outage cannot start a
   retry storm against an order that is already good.
-- **The GSTIN is held but never displayed.** `OLIVE.config.gstin` carries the
-  real number and nothing renders it. It used to print in every page footer;
-  that was removed deliberately — a GSTIN belongs on an invoice, not on
-  every page of a gift shop. Don't put it back on the storefront, and don't
-  delete the value either: the invoice will want it.
+- **The GSTIN is not in this repository at all, and should not be put back.**
+  It printed in every page footer once; that was removed because a GSTIN
+  belongs on an invoice rather than on every page of a gift shop. It was then
+  kept as `OLIVE.config.gstin` for a future invoice and never rendered — which
+  looked safe and was not, because `data.js` is served to every visitor. On a
+  live site it was readable in view-source. Nothing ever read it.
+  When the invoice is built, the number goes in a **Netlify environment
+  variable** beside the Razorpay keys and is read server-side. Anything the
+  browser downloads is published, whether or not it is displayed.
 - **Order email is optional, like the payment keys.** `_email.js` posts to
   Resend over plain `fetch` — no npm, matching the other functions. Without
   `RESEND_API_KEY` and `ORDER_EMAIL_FROM` it logs and returns; nothing breaks.

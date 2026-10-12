@@ -24,11 +24,12 @@ OLIVE.config = {
   email:        'hello@theolivebranch.in',
   phone:        '+91 97690 16925',
   city:         'Mumbai, India',
-  /* Held for invoicing, deliberately never rendered. It used to print in the
-     footer of every page; that was removed because a GSTIN is something a
-     customer needs on an invoice, not something a gift shop announces on all
-     fifteen pages. Nothing reads this today — keep it anyway, the invoice will. */
-  gstin:        '27ADDPW4571E1ZC',
+  /* No `gstin` here, on purpose. It was held for a future invoice and never
+     rendered — but this file is served to every visitor, so "not rendered" is
+     not "not published": it was readable in view-source on a live site.
+     Nothing read it, so removing it cost nothing. When the invoice is built,
+     the number belongs in a Netlify environment variable alongside the
+     Razorpay keys, read server-side, never shipped to a browser. */
 
   instagram:    'https://instagram.com/theolivebranch.in',
   pinterest:    '',
