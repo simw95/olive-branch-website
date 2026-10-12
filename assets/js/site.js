@@ -124,7 +124,7 @@
               '<li><a href="about.html">About us</a></li></ul></div>' +
             '<div><h4>Reach us</h4><ul>' +
               '<li><a href="' + OLIVE.whatsappLink('Hello, I would like to enquire about your hampers.') +
-                '" target="_blank" rel="noopener">WhatsApp ' + C.phone + '</a></li>' +
+                '" target="_blank" rel="noopener">WhatsApp</a></li>' +
               '<li><a href="mailto:' + C.email + '">' + C.email + '</a></li>' +
               '<li><a href="policies.html">Delivery &amp; returns</a></li>' +
               (C.instagram ? '<li><a href="' + C.instagram + '" target="_blank" rel="noopener">Instagram</a></li>' : '') +
