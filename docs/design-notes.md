@@ -82,7 +82,7 @@ Sentence case throughout. Google Fonts with a system fallback stack.
 
 Adopted wholesale, because it is both the favourite reference and better for commerce than a hamburger:
 
-1. Thin olive-deep announcement bar — *"Complimentary delivery on orders over ₹5,000."*
+1. Thin olive-deep announcement bar — *"Hampers composed by hand and delivered across India."* (A free-delivery threshold was dropped; delivery is a flat ₹250.)
 2. Bone header — wordmark centred, utility links left, cart and enquiry right.
 3. Horizontal category nav — Shop all · Wedding · Celebration · Corporate · Bulk gifting · Journal · About.
 

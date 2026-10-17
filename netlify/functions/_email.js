@@ -49,7 +49,7 @@ function orderHtml(o) {
       '<p style="margin:0 0 20px;color:#55554C">' + esc(o.paidAt) + '</p>' +
 
       '<table style="border-collapse:collapse;margin-bottom:8px">' + rows + '</table>' +
-      '<p style="margin:0 0 4px">Delivery: ' + (o.shipping ? inr(o.shipping) : 'Complimentary') + '</p>' +
+      '<p style="margin:0 0 4px">Delivery: ' + inr(o.shipping) + '</p>' +
       '<p style="margin:0 0 20px;font-size:16px"><strong>Paid: ' + inr(o.total) + '</strong> ' +
         '<span style="color:#55554C">(inclusive of all taxes)</span></p>' +
 

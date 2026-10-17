@@ -136,7 +136,8 @@ UI). The wordmark is set in capitals with wide tracking to match the box lids.
   the single place delivery, GST and the total are worked out, called by both
   the cart and `create-order.js` — multiplies the subtotal by `gstRate`, adds
   that to the sum, then adds delivery after it, untaxed. A hamper listed at
-  3,450 is charged at 4,071, or 4,321 under the free-delivery threshold.
+  3,450 is charged at 4,071 plus the flat ₹250 delivery — 4,321. There is no
+  free-delivery threshold any more; don't reintroduce one in copy.
   `OLIVE.config.taxNote` reads "Exclusive of GST" and is a plain string: it
   names no rate, so there is nothing to keep in step with `gstRate`.
   **Changing `gstRate` changes what every customer is charged.**

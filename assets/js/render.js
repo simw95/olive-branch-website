@@ -565,9 +565,7 @@
             '<h2 class="d-s" style="margin-bottom:1.25rem">Order summary</h2>' +
             '<div class="summary-row"><span>Subtotal</span><span>' + OLIVE.inr(sub) + '</span></div>' +
             '<div class="summary-row"><span>Delivery</span><span>' +
-              (ship ? OLIVE.inr(ship) : 'Complimentary') + '</span></div>' +
-            (ship ? '<p class="small" style="margin:0.5rem 0 0">Add ' +
-              OLIVE.inr(OLIVE.config.freeShipping - sub) + ' for complimentary delivery.</p>' : '') +
+              OLIVE.inr(ship) + '</span></div>' +
             /* Added, not contained: prices are entered before tax, so this
                row is a line the total is still waiting on and a bare "GST" is
                exactly right. If prices ever go inclusive again this has to say

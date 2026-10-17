@@ -34,9 +34,8 @@ OLIVE.config = {
   instagram:    'https://instagram.com/theolivebranch.in',
   pinterest:    '',
 
-  announcement: 'Complimentary delivery across India on orders over ₹5,000.',
-  freeShipping: 5000,
-  shipping:     250,                         // charged below freeShipping
+  announcement: 'Hampers composed by hand and delivered across India.',
+  shipping:     250,                         // flat, on every order
 
   /* Every `price` below is the figure BEFORE tax. GST is added on top by
      orderTotals(), which both the cart and create-order.js go through, so a
@@ -600,7 +599,7 @@ OLIVE.inr = function (n) {
 
    Prices in `prices` are entered BEFORE tax, so GST is **added, not
    extracted**: a hamper listed at 3,450 carries 621 of tax and is charged at
-   4,071, plus delivery if the subtotal is under the free-delivery threshold.
+   4,071, plus the flat delivery charge.
 
    GST falls on the hampers only — delivery is added after it, untaxed.
 
@@ -611,7 +610,7 @@ OLIVE.inr = function (n) {
    the cart's label has to say which. Get those two out of step and the
    customer is either charged the tax twice or not at all. */
 OLIVE.orderTotals = function (subtotal) {
-  var shipping = subtotal >= OLIVE.config.freeShipping ? 0 : OLIVE.config.shipping;
+  var shipping = OLIVE.config.shipping;
   var gst = Math.round(subtotal * OLIVE.config.gstRate);
   return {
     subtotal: subtotal,

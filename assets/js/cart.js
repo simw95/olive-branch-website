@@ -113,7 +113,7 @@
       var t = Cart.totals();
       out.push('');
       out.push('Subtotal: ' + OLIVE.inr(t.subtotal));
-      out.push('Delivery: ' + (t.shipping ? OLIVE.inr(t.shipping) : 'Complimentary'));
+      out.push('Delivery: ' + OLIVE.inr(t.shipping));
       out.push('GST: ' + OLIVE.inr(t.gst));
       out.push('Total: ' + OLIVE.inr(t.total));
 
