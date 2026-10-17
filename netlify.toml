@@ -25,12 +25,16 @@
   [headers.values]
     cache-control = "public, max-age=31536000, immutable"
 
+# CSS and JS keep the same filenames from one deploy to the next, and data.js
+# carries prices and the announcement bar. A week-long max-age kept returning
+# visitors on the old copy for up to seven days after a deploy. Revalidating
+# costs one conditional request per file, answered with a 304 when unchanged.
 [[headers]]
   for = "/assets/css/*"
   [headers.values]
-    cache-control = "public, max-age=604800"
+    cache-control = "public, max-age=0, must-revalidate"
 
 [[headers]]
   for = "/assets/js/*"
   [headers.values]
-    cache-control = "public, max-age=604800"
+    cache-control = "public, max-age=0, must-revalidate"
